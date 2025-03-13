@@ -40,7 +40,8 @@ public class CommentController {
                     defaultValue = AppConstants.SORT_COMMENTS_BY, required = false) String sortBy,
             @RequestParam(name = "sortOrder",
                     defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
-        CommentResponse commentResponse = (CommentResponse) commentService.getCommentsByPost(postId, pageNumber, pageSize, sortBy, sortOrder);
+        CommentResponse commentResponse = (CommentResponse) commentService.getCommentsByPost(postId,
+                pageNumber, pageSize, sortBy, sortOrder);
         return new ResponseEntity<>(commentResponse, HttpStatus.OK);
     }
 
