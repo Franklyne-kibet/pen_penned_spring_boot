@@ -3,8 +3,11 @@ package com.pen_penned.blog.service;
 import com.pen_penned.blog.exceptions.ResourceNotFoundException;
 import com.pen_penned.blog.model.Post;
 import com.pen_penned.blog.model.User;
+import com.pen_penned.blog.payload.CommentDTO;
 import com.pen_penned.blog.payload.PostDTO;
+import com.pen_penned.blog.payload.PostDetailsDTO;
 import com.pen_penned.blog.payload.PostResponse;
+import com.pen_penned.blog.repositories.CommentRepository;
 import com.pen_penned.blog.repositories.PostRepository;
 import com.pen_penned.blog.util.AuthUtil;
 import jakarta.transaction.Transactional;
@@ -25,19 +28,32 @@ public class PostServiceImpl implements PostService {
 
     private final ModelMapper modelMapper;
     private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
     private final AuthUtil authUtil;
 
     @Override
     public PostDTO createPost(PostDTO postDTO, User user) {
+        // Map DTO to Entity
         Post post = modelMapper.map(postDTO, Post.class);
         post.setAuthor(user);
+
+        // Set published to true
+        post.setIsPublished(true);
 
         List<Post> postList = user.getPosts();
         postList.add(post);
         user.setPosts(postList);
 
         Post savedPost = postRepository.save(post);
-        return modelMapper.map(savedPost, PostDTO.class);
+        PostDTO savedPostDTO = modelMapper.map(savedPost, PostDTO.class);
+
+        // Set author details
+        savedPostDTO.setAuthorName(user.getUserName());
+
+        //  Ensure comments is zero
+        savedPostDTO.setCommentCount(0);
+
+        return savedPostDTO;
     }
 
     @Override
@@ -55,8 +71,11 @@ public class PostServiceImpl implements PostService {
         List<Post> posts = pagePosts.getContent();
 
         List<PostDTO> postDTOS = posts.stream()
-                .map(post -> modelMapper.map(post, PostDTO.class))
-                .toList();
+                .map(post -> {
+                    PostDTO postDTO = modelMapper.map(post, PostDTO.class);
+                    postDTO.setCommentCount(commentRepository.getCommentCountByPostId(post.getPostId())); // Fetch comment count only
+                    return postDTO;
+                }).toList();
 
         PostResponse postResponse = new PostResponse();
         postResponse.setContent(postDTOS);
@@ -69,11 +88,23 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PostDTO getPostById(Long postId) {
+    public PostDetailsDTO getPostById(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "postId", postId));
 
-        return modelMapper.map(post, PostDTO.class);
+        PostDetailsDTO postDetailsDTO = modelMapper.map(post, PostDetailsDTO.class);
+
+        // Set comment count
+        postDetailsDTO.setCommentCount(commentRepository.getCommentCountByPostId(post.getPostId()));
+
+        // Load comments with author names
+        List<CommentDTO> comments = post.getComments().stream()
+                .map(comment -> modelMapper.map(comment, CommentDTO.class))
+                .toList();
+
+        postDetailsDTO.setComments(comments);
+
+        return postDetailsDTO;
     }
 
     @Override
@@ -103,7 +134,7 @@ public class PostServiceImpl implements PostService {
         if (postDTO.getSlug() != null) existingPost.setSlug(postDTO.getSlug());
         if (postDTO.getTags() != null) existingPost.setTags(postDTO.getTags());
         if (postDTO.getCoverImageUrl() != null) existingPost.setCoverImageUrl(postDTO.getCoverImageUrl());
-        if (postDTO.getIsPublished() != null) existingPost.setPublished(postDTO.getIsPublished());
+        if (postDTO.getIsPublished() != null) existingPost.setIsPublished(postDTO.getIsPublished());
 
         // Save updated post
         Post updatedPost = postRepository.save(existingPost);
