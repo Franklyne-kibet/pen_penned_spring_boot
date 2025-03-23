@@ -138,7 +138,15 @@ public class PostServiceImpl implements PostService {
 
         // Save updated post
         Post updatedPost = postRepository.save(existingPost);
-        return modelMapper.map(updatedPost, PostDTO.class);
+
+        // Convert to DTO
+        PostDTO updatedPostDTO = modelMapper.map(updatedPost, PostDTO.class);
+
+        // Set Comment Count
+        int commentCount = commentRepository.getCommentCountByPostId(postId);
+        updatedPostDTO.setCommentCount(commentCount);
+
+        return updatedPostDTO;
     }
 
     @Override
