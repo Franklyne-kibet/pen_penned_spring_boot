@@ -3,6 +3,7 @@ package com.pen_penned.blog.controller;
 import com.pen_penned.blog.config.AppConstants;
 import com.pen_penned.blog.model.User;
 import com.pen_penned.blog.payload.PostDTO;
+import com.pen_penned.blog.payload.PostDetailsDTO;
 import com.pen_penned.blog.payload.PostResponse;
 import com.pen_penned.blog.service.PostService;
 import com.pen_penned.blog.util.AuthUtil;
@@ -46,8 +47,8 @@ public class PostController {
     }
 
     @GetMapping("/posts/{postId}")
-    public ResponseEntity<PostDTO> getPostById(@PathVariable Long postId) {
-        PostDTO postDTO = postService.getPostById(postId);
+    public ResponseEntity<PostDetailsDTO> getPostById(@PathVariable Long postId) {
+        PostDetailsDTO postDTO = postService.getPostById(postId);
         return new ResponseEntity<>(postDTO, HttpStatus.OK);
     }
 
@@ -60,8 +61,8 @@ public class PostController {
     }
 
     @PutMapping("/posts/{postId}")
-    public ResponseEntity<PostDTO> updatePostById(@PathVariable Long postId,
-                                                  @Valid @RequestBody PostDTO postDTO) throws AccessDeniedException {
+    public ResponseEntity<PostDTO> updatePostById(
+            @PathVariable Long postId, @Valid @RequestBody PostDTO postDTO) throws AccessDeniedException {
         PostDTO updatedPost = postService.updatePost(postId, postDTO);
         return new ResponseEntity<>(updatedPost, HttpStatus.OK);
     }
