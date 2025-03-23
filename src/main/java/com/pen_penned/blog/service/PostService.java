@@ -2,6 +2,7 @@ package com.pen_penned.blog.service;
 
 import com.pen_penned.blog.model.User;
 import com.pen_penned.blog.payload.PostDTO;
+import com.pen_penned.blog.payload.PostDetailsDTO;
 import com.pen_penned.blog.payload.PostResponse;
 import jakarta.validation.Valid;
 
@@ -15,7 +16,7 @@ public interface PostService {
 
     PostResponse getAllPosts(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder);
 
-    PostDTO getPostById(Long postId);
+    PostDetailsDTO getPostById(Long postId);
 
     List<PostDTO> getUserPosts(User user);
 

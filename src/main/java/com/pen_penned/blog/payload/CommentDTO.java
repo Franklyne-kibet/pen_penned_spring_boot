@@ -12,6 +12,7 @@ public class CommentDTO {
     private Long commentId;
     private String content;
     private Long authorId;
+    private String authorName;
     private Long postId;
     private String createdAt;
 }

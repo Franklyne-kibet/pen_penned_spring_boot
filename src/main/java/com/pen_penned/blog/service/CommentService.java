@@ -13,4 +13,6 @@ public interface CommentService {
     void deleteComment(Long commentId) throws AccessDeniedException;
 
     Object getCommentsByPost(Long postId, Integer pageNumber, Integer pageSize, String sortBy, String sortOrder);
+
+    CommentDTO getCommentById(Long commentId);
 }

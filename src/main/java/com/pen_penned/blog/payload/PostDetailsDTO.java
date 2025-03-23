@@ -6,11 +6,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostDTO {
+public class PostDetailsDTO {
 
     private Long postId;
     private String title;
@@ -25,6 +26,7 @@ public class PostDTO {
     private String authorName;
 
     private Integer commentCount;
+    private List<CommentDTO> comments;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;

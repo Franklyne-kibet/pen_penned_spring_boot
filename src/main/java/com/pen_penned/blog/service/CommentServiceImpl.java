@@ -40,6 +40,16 @@ public class CommentServiceImpl implements CommentService {
         return modelMapper.map(savedComment, CommentDTO.class);
     }
 
+
+    @Override
+    public CommentDTO getCommentById(Long commentId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment", "commentId", commentId));
+
+        return modelMapper.map(comment, CommentDTO.class);
+    }
+
+
     @Override
     public Object getCommentsByPost(
             Long postId, Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {

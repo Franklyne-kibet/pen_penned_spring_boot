@@ -44,7 +44,7 @@ public class Post {
     private String slug;
 
     @Column(nullable = false)
-    private boolean isPublished = false;
+    private Boolean isPublished;
 
     @Column
     private String tags;
@@ -61,6 +61,9 @@ public class Post {
             orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 
+    @Column(nullable = false)
+    private Boolean deleted = false;
+
     @Column(nullable = false, updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
@@ -68,9 +71,6 @@ public class Post {
     @Column(nullable = false)
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    @Column(nullable = false)
-    private boolean deleted = false;
 
 
     @PrePersist
