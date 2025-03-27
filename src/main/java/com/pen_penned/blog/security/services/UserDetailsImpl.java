@@ -3,7 +3,7 @@ package com.pen_penned.blog.security.services;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.pen_penned.blog.model.User;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -13,24 +13,21 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@EqualsAndHashCode(of = "id")
 public class UserDetailsImpl implements UserDetails {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    @Getter
     private Long id;
 
     private String username;
 
-    @Getter
     private String email;
 
     @JsonIgnore
@@ -65,10 +62,4 @@ public class UserDetailsImpl implements UserDetails {
     public String getUsername() {
         return username;
     }
-
-    @Override
-    public boolean equals(Object o) {
-        return this == o || (o instanceof UserDetailsImpl user && Objects.equals(id, user.id));
-    }
-
 }
