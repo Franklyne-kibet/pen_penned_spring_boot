@@ -37,7 +37,30 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
+        <docker.image.name.notags>com.pen_penned.${project.artifactId}</docker.image.name.notags>
+        <docker.image.name.versioned>${docker.image.name.notags}:${maven.build.timestamp}</docker.image.name.versioned>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <SPRING_PROFILE>dev</SPRING_PROFILE>
+            </properties>
+        </profile>
+        <profile>
+            <id>prod</id>
+            <properties>
+                <SPRING_PROFILE>prod</SPRING_PROFILE>
+            </properties>
+        </profile>
+    </profiles>
+
+
     <dependencies>
         <!-- Spring Boot Dependencies -->
         <dependency>
@@ -52,9 +75,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+
+        <!-- Spring Boot Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
 
         <!-- ModelMapper -->
@@ -139,6 +168,12 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <profiles>${SPRING_PROFILE}</profiles>
+                    <image>
+                        <name>${docker.image.name.versioned}</name>
+                        <tags>${docker.image.name.notags}:latest, ${docker.image.name.notags}:${project.version}</tags>
+                        <builder>paketobuildpacks/builder:full</builder>
+                    </image>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -146,6 +181,14 @@
                         </exclude>
                     </excludes>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>default</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
