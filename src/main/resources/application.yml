@@ -1,0 +1,6 @@
+# =========================
+# Spring Boot Application Configuration
+# =========================
+spring:
+  profiles:
+    active: dev

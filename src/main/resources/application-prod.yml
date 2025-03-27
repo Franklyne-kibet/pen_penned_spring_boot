@@ -1,0 +1,115 @@
+# =========================
+# Spring Boot Application Configuration
+# =========================
+spring:
+  application:
+    name: blog-platform
+
+  config:
+    import: optional:file:.env.prod[.properties]
+    activate-on-profile: prod
+
+  # =========================
+  # JWT Configuration (JSON Web Tokens)
+  # =========================
+  app:
+    jwtSecret: ${JWT_SECRET}
+    jwtExpirationMs: ${JWT_EXPIRATION_MS}
+    jwtCookieName: ${JWT_COOKIE_NAME}
+
+  # =========================
+  # Database Configuration (PostgreSQL)
+  # =========================
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 50
+        format_sql: false
+        order_inserts: true
+        order_updates: true
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  # =========================
+  # OAuth2 Authentication (GitHub & Google)
+  # =========================
+  #  security:
+  #    oauth2:
+  #      client:
+  #        registration:
+  #          github:
+  #            client-id: ${GITHUB_CLIENT_ID}
+  #            client-secret: ${GITHUB_CLIENT_SECRET}
+  #            # scope: user:email  # Defines the OAuth scopes (GitHub-specific)
+  #          google:
+  #            client-id: ${GOOGLE_CLIENT_ID}
+  #            client-secret: ${GOOGLE_CLIENT_SECRET}
+
+
+
+  # =========================
+  # Logging Configuration
+  # =========================
+  logging:
+    level:
+      root: INFO
+      org:
+        springframework: WARN
+        security: WARN
+        hibernate: ERROR
+      com:
+        pen_penned:
+          blog: INFO
+    pattern:
+      console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file:
+      path: /var/logs/blog-platform/
+      name: application.log
+    appenders:
+      errorLog:
+        file: /var/logs/blog-platform/errors.log
+        level: ERROR
+    logback:
+      rollingpolicy:
+        max-file-size: 10MB
+        max-history: 7
+        total-size-cap: 100MB
+    json:
+      enabled: true
+      pattern:
+        console: "{ \"timestamp\": \"%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}\", \"level\": \"%level\", \"message\": \"%msg\" }"
+
+# =========================
+# Server Configuration
+# =========================
+# Needed for AWS Elastic Beanstalk or Docker deployments
+server:
+  port: ${SERVER_PORT:8080}
+
+# =========================
+# Frontend Configuration
+# =========================
+frontend:
+  url: ${FRONTEND_URL}
+
+# =========================
+# Image Hosting Configuration
+# =========================
+image:
+  base:
+    url: ${IMAGE_BASE_URL}
+
+# =========================
+# Monitoring & Error Tracking
+# =========================
+#sentry:
+#  dsn: ${SENTRY_DSN:}
+#  traces-sample-rate: 1.0
