@@ -1,6 +1,6 @@
 package com.pen_penned.blog.service;
 
-import com.pen_penned.blog.exceptions.ResourceNotFoundException;
+import com.pen_penned.blog.exception.ResourceNotFoundException;
 import com.pen_penned.blog.model.Post;
 import com.pen_penned.blog.model.User;
 import com.pen_penned.blog.payload.CommentDTO;
@@ -124,7 +124,7 @@ public class PostServiceImpl implements PostService {
 
         // Check if the logged-in user is the owner of the post
         User loggedInUser = authUtil.loggedInUser();
-        if (!existingPost.getAuthor().getUserId().equals(loggedInUser.getUserId())) {
+        if (!existingPost.getAuthor().getId().equals(loggedInUser.getId())) {
             throw new AccessDeniedException("You do not have permission to update this post.");
         }
 
@@ -157,7 +157,7 @@ public class PostServiceImpl implements PostService {
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "postId", postId));
 
         User loggedInUser = authUtil.loggedInUser();
-        if (!post.getAuthor().getUserId().equals(loggedInUser.getUserId())) {
+        if (!post.getAuthor().getId().equals(loggedInUser.getId())) {
             throw new AccessDeniedException("You do not have permission to delete this post.");
         }
 

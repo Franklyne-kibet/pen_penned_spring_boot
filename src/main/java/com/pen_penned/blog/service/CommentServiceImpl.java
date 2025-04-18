@@ -1,6 +1,6 @@
 package com.pen_penned.blog.service;
 
-import com.pen_penned.blog.exceptions.ResourceNotFoundException;
+import com.pen_penned.blog.exception.ResourceNotFoundException;
 import com.pen_penned.blog.model.Comment;
 import com.pen_penned.blog.model.User;
 import com.pen_penned.blog.payload.CommentDTO;
@@ -83,7 +83,7 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Comment", "commentId", commentId));
 
         User loggedInUser = authUtil.loggedInUser();
-        if (!comment.getAuthor().getUserId().equals(loggedInUser.getUserId())) {
+        if (!comment.getAuthor().getId().equals(loggedInUser.getId())) {
             throw new AccessDeniedException("You do not have permission to delete this comment.");
         }
 
