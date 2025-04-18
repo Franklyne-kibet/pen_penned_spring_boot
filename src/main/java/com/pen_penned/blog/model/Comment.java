@@ -35,6 +35,4 @@ public class Comment {
     @Column(nullable = false, updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
-
-
 }

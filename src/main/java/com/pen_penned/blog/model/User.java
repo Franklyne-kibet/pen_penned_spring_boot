@@ -9,15 +9,13 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(columnNames = "email")
 })
@@ -25,8 +23,8 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
-    private Long userId;
+    @EqualsAndHashCode.Include
+    private Long id;
 
     @NotBlank
     @Size(min = 3, max = 50)
@@ -36,6 +34,7 @@ public class User {
     @NotBlank
     @Email
     @Column(nullable = false, unique = true, length = 100)
+    @EqualsAndHashCode.Include
     private String email;
 
     @NotBlank
@@ -52,8 +51,6 @@ public class User {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @Getter
-    @Setter
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE},
             fetch = FetchType.LAZY)
     @JoinTable(name = "user_role",
@@ -62,19 +59,49 @@ public class User {
     )
     private Set<Role> roles = new HashSet<>();
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "provider")
+    private AuthProvider provider = AuthProvider.LOCAL;
+
+    @Column(name = "provider_id")
+    private String providerId;
+
     @ToString.Exclude
     @OneToMany(mappedBy = "author", cascade = {CascadeType.PERSIST, CascadeType.MERGE},
             orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Post> posts = new ArrayList<>();
 
+    @ToString.Exclude
     @OneToMany(mappedBy = "author", cascade = {CascadeType.PERSIST, CascadeType.MERGE},
             orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Comment> comments = new ArrayList<>();
 
-    public User(String userName, String email, String password) {
-        this.userName = userName;
-        this.email = email;
-        this.password = password;
+    // Safe constructor for creating new users
+    public static User createUser(String userName, String email, String encodedPassword) {
+        User user = new User();
+        user.userName = userName;
+        user.email = email;
+        user.password = encodedPassword;
+        return user;
     }
 
+    // Business methods for managing relationships
+    public void addRole(Role role) {
+        this.roles.add(role);
+        role.getUsers().add(this);
+    }
+
+    public void removeRole(Role role) {
+        this.roles.remove(role);
+        role.getUsers().remove(this);
+    }
+
+    public Set<Role> getRoles() {
+        return Collections.unmodifiableSet(roles);
+    }
+
+    // Password should only be set through proper encoding
+    public void changePassword(String newEncodedPassword) {
+        this.password = newEncodedPassword;
+    }
 }
