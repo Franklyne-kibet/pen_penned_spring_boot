@@ -18,7 +18,8 @@ public class UserDetailsImpl implements UserDetails, OAuth2User {
     private static final long serialVersionUID = 1L;
 
     private Long id;
-    private String username;
+    private String firstName;
+    private String lastName;
     private String email;
 
     @JsonIgnore
@@ -28,10 +29,11 @@ public class UserDetailsImpl implements UserDetails, OAuth2User {
 
     private Map<String, Object> attributes;
 
-    public UserDetailsImpl(Long id, String username, String email, String password,
+    public UserDetailsImpl(Long id, String firstName, String lastName, String email, String password,
                            Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
-        this.username = username;
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.email = email;
         this.password = password;
         this.authorities = authorities;
@@ -48,7 +50,8 @@ public class UserDetailsImpl implements UserDetails, OAuth2User {
 
         return new UserDetailsImpl(
                 user.getId(),
-                user.getUserName(),
+                user.getFirstName(),
+                user.getLastName(),
                 user.getEmail(),
                 user.getPassword(),
                 authorities);
@@ -80,7 +83,15 @@ public class UserDetailsImpl implements UserDetails, OAuth2User {
 
     @Override
     public String getUsername() {
-        return username;
+        return email;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
     }
 
     @Override

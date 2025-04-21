@@ -1,7 +1,7 @@
 package com.pen_penned.blog.controller;
 
+import com.pen_penned.blog.dto.request.CommentDTO;
 import com.pen_penned.blog.model.User;
-import com.pen_penned.blog.payload.CommentDTO;
 import com.pen_penned.blog.service.CommentService;
 import com.pen_penned.blog.util.AuthUtil;
 import jakarta.validation.Valid;

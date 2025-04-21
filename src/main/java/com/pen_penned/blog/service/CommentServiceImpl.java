@@ -1,10 +1,10 @@
 package com.pen_penned.blog.service;
 
+import com.pen_penned.blog.dto.request.CommentDTO;
+import com.pen_penned.blog.dto.response.CommentResponse;
 import com.pen_penned.blog.exception.ResourceNotFoundException;
 import com.pen_penned.blog.model.Comment;
 import com.pen_penned.blog.model.User;
-import com.pen_penned.blog.payload.CommentDTO;
-import com.pen_penned.blog.payload.CommentResponse;
 import com.pen_penned.blog.repositories.CommentRepository;
 import com.pen_penned.blog.util.AuthUtil;
 import jakarta.transaction.Transactional;

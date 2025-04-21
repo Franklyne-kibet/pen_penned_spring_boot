@@ -1,6 +1,7 @@
 package com.pen_penned.blog.payload;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.pen_penned.blog.dto.request.CommentDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

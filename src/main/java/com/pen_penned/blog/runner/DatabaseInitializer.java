@@ -34,25 +34,24 @@ public class DatabaseInitializer implements CommandLineRunner {
         Role adminRole = ensureRoleExists(AppRole.ROLE_ADMIN);
 
         // Create users with roles
-        ensureUserExists("user1", "user1@example.com", "password1", userRole);
-        ensureUserExists("editor1", "editor1@example.com", "password2", editorRole);
-        ensureUserExists("admin", "admin@example.com", "adminPass", adminRole,
-                userRole, editorRole);
+        ensureUserExists("John", "Doe", "john@example.com", "password1", userRole);
+        ensureUserExists("Mary", "Johns", "mary@example.com", "password2", userRole);
+        ensureUserExists("Walter", "Kibet", "walter@example.com", "adminPass", userRole);
     }
 
     @Transactional
-    private Role ensureRoleExists(AppRole roleName) {
-        return roleRepository.findByRoleName(roleName)
+    private Role ensureRoleExists(AppRole appRole) {
+        return roleRepository.findByRoleName(appRole)
                 .orElseGet(() -> {
                     Role newRole = new Role();
-                    newRole.setRoleName(roleName);
+                    newRole.setRoleName(appRole);
                     return roleRepository.save(newRole);
                 });
     }
 
-    private void ensureUserExists(String username, String email, String password, Role... roles) {
-        if (!userRepository.existsByUserName(username)) {
-            User user = User.createUser(username, email, passwordEncoder.encode(password));
+    private void ensureUserExists(String firstName, String lastName, String email, String password, Role... roles) {
+        if (!userRepository.existsByEmail(email)) {
+            User user = User.createUser(firstName, lastName, email, passwordEncoder.encode(password));
             for (Role role : roles) {
                 user.addRole(role);
             }

@@ -19,6 +19,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtUtils jwtUtils;
     private final OAuth2AuthorizationRequestRepository oAuth2AuthorizationRequestRepository;
 
+//    @Value("${app.oauth2.redirect-uri}")
+//    private String redirectUri;
 
     public OAuth2AuthenticationSuccessHandler(
             JwtUtils jwtUtils, OAuth2AuthorizationRequestRepository oAuth2AuthorizationRequestRepository) {
@@ -44,10 +46,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     protected String determineTargetUrl(HttpServletRequest request, HttpServletResponse response, Authentication
             authentication) {
         String redirectUrl = request.getParameter("redirect_uri");
+        // redirectUrl = "http://localhost:3000/oauth2/redirect";
 
         // Default redirect URL (for frontend URL)
         if (redirectUrl == null || redirectUrl.isEmpty()) {
-            redirectUrl = "/api/v1/secure"; // TODO: Change this to frontend URL
+            redirectUrl = "/api/test/protected"; // TODO: Change this to frontend URL
         }
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();

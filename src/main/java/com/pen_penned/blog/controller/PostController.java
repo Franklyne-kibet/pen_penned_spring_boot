@@ -1,8 +1,8 @@
 package com.pen_penned.blog.controller;
 
 import com.pen_penned.blog.config.AppConstants;
+import com.pen_penned.blog.dto.response.CommentResponse;
 import com.pen_penned.blog.model.User;
-import com.pen_penned.blog.payload.CommentResponse;
 import com.pen_penned.blog.payload.PostDTO;
 import com.pen_penned.blog.payload.PostDetailsDTO;
 import com.pen_penned.blog.payload.PostResponse;

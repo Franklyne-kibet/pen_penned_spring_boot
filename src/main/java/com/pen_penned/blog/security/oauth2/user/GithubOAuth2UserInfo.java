@@ -4,6 +4,8 @@ import java.util.Map;
 
 public class GithubOAuth2UserInfo extends OAuth2UserInfo {
 
+    private String email;
+
     public GithubOAuth2UserInfo(Map<String, Object> attributes) {
         super(attributes);
     }
@@ -20,7 +22,17 @@ public class GithubOAuth2UserInfo extends OAuth2UserInfo {
 
     @Override
     public String getEmail() {
+        // First try to get from the custom field if it was set
+        if (email != null) {
+            return email;
+        }
+        // Otherwise get from attributes
         return (String) attributes.get("email");
+    }
+
+    @Override
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     @Override
