@@ -1,5 +1,6 @@
 package com.pen_penned.blog.controller;
 
+import com.pen_penned.blog.dto.request.LocalUserDTO;
 import com.pen_penned.blog.model.AppRole;
 import com.pen_penned.blog.model.Role;
 import com.pen_penned.blog.model.User;
@@ -11,22 +12,27 @@ import com.pen_penned.blog.security.request.SignupRequest;
 import com.pen_penned.blog.security.response.MessageResponse;
 import com.pen_penned.blog.security.response.UserInfoResponse;
 import com.pen_penned.blog.security.services.UserDetailsImpl;
+import com.pen_penned.blog.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -36,18 +42,21 @@ public class AuthController {
     private final JwtUtils jwtUtils;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final PasswordEncoder encoder;
     private final AuthenticationManager authenticationManager;
+    private final UserService userService;
 
     @Autowired
     public AuthController(JwtUtils jwtUtils, UserRepository userRepository,
                           RoleRepository roleRepository,
-                          PasswordEncoder encoder, AuthenticationManager authenticationManager) {
+                          AuthenticationManager authenticationManager,
+                          UserService userService
+    ) {
         this.jwtUtils = jwtUtils;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
-        this.encoder = encoder;
         this.authenticationManager = authenticationManager;
+        this.userService = userService;
+
     }
 
     @PostMapping("/signin")
@@ -55,15 +64,18 @@ public class AuthController {
         Authentication authentication;
 
         try {
-            authentication = authenticationManager
-                    .authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(),
-                            loginRequest.getPassword()));
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getEmail(),
+                            loginRequest.getPassword()
+                    )
+            );
 
         } catch (AuthenticationException exception) {
             Map<String, Object> map = new HashMap<>();
             map.put("message", "Bad credentials");
             map.put("status", false);
-            return new ResponseEntity<Object>(map, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<Object>(map, HttpStatus.UNAUTHORIZED);
         }
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -76,10 +88,14 @@ public class AuthController {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
-        UserInfoResponse response = new UserInfoResponse(userDetails.getId(),
-                userDetails.getUsername(), roles, jwtCookie.toString());
+        UserInfoResponse response = new UserInfoResponse(
+                userDetails.getId(),
+                userDetails.getUsername(),
+                roles,
+                jwtCookie.toString());
 
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
                 .body(response);
     }
 
@@ -87,55 +103,19 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signupRequest) {
         // validate
-        if (userRepository.existsByUserName(signupRequest.getUsername())) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: Username is already taken!"));
-        }
-
         if (userRepository.existsByEmail(signupRequest.getEmail())) {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: Email is already in use!"));
         }
 
-        //  Create new user's account
-        User user = User.createUser(
-                signupRequest.getUsername(),
-                signupRequest.getEmail(),
-                encoder.encode(signupRequest.getPassword())
-        );
+        //  Create SignupRequest to LocalUserDTO
+        LocalUserDTO localUserDTO = new LocalUserDTO();
+        localUserDTO.setFirstName(signupRequest.getFirstName());
+        localUserDTO.setLastName(signupRequest.getLastName());
+        localUserDTO.setEmail(signupRequest.getEmail());
+        localUserDTO.setPassword(signupRequest.getPassword());
 
-        Set<String> strRoles = signupRequest.getRole();
-        Set<Role> roles = new HashSet<>();
-
-        if (strRoles == null) {
-            Role userRole = roleRepository.findByRoleName(AppRole.ROLE_USER)
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-            roles.add(userRole);
-        } else {
-            strRoles.forEach(role -> {
-                switch (role) {
-                    case "admin":
-                        Role adminRole = roleRepository.findByRoleName(AppRole.ROLE_ADMIN)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(adminRole);
-
-                        break;
-
-                    case "Editor":
-                        Role modRole = roleRepository.findByRoleName(AppRole.ROLE_EDITOR)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(modRole);
-                        break;
-
-                    default:
-                        Role userRole = roleRepository.findByRoleName(AppRole.ROLE_USER)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(userRole);
-                }
-            });
-
-        }
-
-        user.setRoles(roles);
-        userRepository.save(user);
+        // Use the service to create the user
+        User user = userService.createLocalUser(localUserDTO);
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
@@ -171,5 +151,34 @@ public class AuthController {
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,
                         cookie.toString())
                 .body(new MessageResponse("You've been signed out!"));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/assign-role")
+    public ResponseEntity<?> assignRole(@RequestParam Long userId, @RequestParam String roleName) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Role role = roleRepository.findByRoleName(AppRole.valueOf(roleName))
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+
+        user.getRoles().add(role);
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new MessageResponse("Role assigned successfully!"));
+    }
+
+
+    @GetMapping("/token")
+    public ResponseEntity<Map<String, String>> getTokenInfo(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails != null) {
+            Map<String, String> response = new HashMap<>();
+            response.put("username", userDetails.getUsername());
+            response.put("token", jwtUtils.generateJwtToken(
+                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())));
+
+            return ResponseEntity.ok(response);
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 }

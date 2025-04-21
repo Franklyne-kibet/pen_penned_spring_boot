@@ -27,9 +27,12 @@ public class User {
     private Long id;
 
     @NotBlank
-    @Size(min = 3, max = 50)
+    @Size(min = 1, max = 50)
     @Column(nullable = false)
-    private String userName;
+    private String firstName;
+
+    @Size(max = 50)
+    private String lastName;
 
     @NotBlank
     @Email
@@ -37,9 +40,7 @@ public class User {
     @EqualsAndHashCode.Include
     private String email;
 
-    @NotBlank
-    @Size(min = 6, max = 120)
-    @Column(nullable = false, name = "password")
+    @Column(name = "password")
     @ToString.Exclude
     private String password;
 
@@ -51,7 +52,7 @@ public class User {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE},
+    @ManyToMany(cascade = {CascadeType.MERGE},
             fetch = FetchType.LAZY)
     @JoinTable(name = "user_role",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -77,9 +78,10 @@ public class User {
     private List<Comment> comments = new ArrayList<>();
 
     // Safe constructor for creating new users
-    public static User createUser(String userName, String email, String encodedPassword) {
+    public static User createUser(String firstName, String lastName, String email, String encodedPassword) {
         User user = new User();
-        user.userName = userName;
+        user.firstName = firstName;
+        user.lastName = lastName;
         user.email = email;
         user.password = encodedPassword;
         return user;
