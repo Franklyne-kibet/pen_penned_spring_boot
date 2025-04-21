@@ -94,8 +94,16 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         user.setProvider(provider);
         user.setProviderId(oAuth2UserInfo.getId());
-        user.setUserName(oAuth2UserInfo.getName());
         user.setEmail(oAuth2UserInfo.getEmail());
+
+        // Handle name splitting
+        String fullName = StringUtils.hasText(oAuth2UserInfo.getName())
+                ? oAuth2UserInfo.getName()
+                : oAuth2UserInfo.getEmail().split("@")[0];
+
+        String[] nameParts = fullName.trim().split(" ", 2);
+        user.setFirstName(nameParts[0]);
+        user.setLastName(nameParts.length > 1 ? nameParts[1] : "");
 
         // Set default USER role
         Role userRole = roleRepository.findByRoleName(AppRole.ROLE_USER)
@@ -108,7 +116,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
 
     private User updateExistingUser(User existingUser, OAuth2UserInfo oAuth2UserInfo) {
-        existingUser.setUserName(oAuth2UserInfo.getName());
+        String fullName = StringUtils.hasText(oAuth2UserInfo.getName())
+                ? oAuth2UserInfo.getName()
+                : oAuth2UserInfo.getEmail().split("@")[0];
+
+        String[] nameParts = fullName.trim().split(" ", 2);
+        existingUser.setFirstName(nameParts[0]);
+        existingUser.setLastName(nameParts.length > 1 ? nameParts[1] : "");
+        
         return userRepository.save(existingUser);
     }
 

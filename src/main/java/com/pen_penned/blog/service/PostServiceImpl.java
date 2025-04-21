@@ -48,7 +48,7 @@ public class PostServiceImpl implements PostService {
         PostDTO savedPostDTO = modelMapper.map(savedPost, PostDTO.class);
 
         // Set author details
-        savedPostDTO.setAuthorName(user.getUserName());
+        savedPostDTO.setAuthorName(user.getFirstName());
 
         //  Ensure comments is zero
         savedPostDTO.setCommentCount(0);

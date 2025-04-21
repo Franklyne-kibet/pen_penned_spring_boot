@@ -18,30 +18,28 @@ public class AuthUtil {
         this.userRepository = userRepository;
     }
 
-    public String loggedInEmail() {
+    private User getAuthenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userRepository.findByUserName(authentication.getName())
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: "
-                        + authentication.getName()));
 
-        return user.getEmail();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new IllegalStateException("No authenticated user found");
+        }
+
+        String email = authentication.getName();
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+    }
+
+    public String loggedInEmail() {
+        return getAuthenticatedUser().getEmail();
     }
 
     public Long loggedInUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userRepository.findByUserName(authentication.getName())
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: "
-                        + authentication.getName()));
-
-        return user.getId();
+        return getAuthenticatedUser().getId();
     }
 
     public User loggedInUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        return userRepository.findByUserName(authentication.getName())
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: "
-                        + authentication.getName()));
-
+        return getAuthenticatedUser();
     }
 }
