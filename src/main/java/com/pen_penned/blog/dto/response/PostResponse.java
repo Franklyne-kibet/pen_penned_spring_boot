@@ -1,5 +1,6 @@
-package com.pen_penned.blog.payload;
+package com.pen_penned.blog.dto.response;
 
+import com.pen_penned.blog.dto.request.PostDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
