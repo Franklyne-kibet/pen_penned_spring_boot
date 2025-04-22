@@ -1,9 +1,9 @@
 package com.pen_penned.blog.service;
 
+import com.pen_penned.blog.dto.request.PostDTO;
+import com.pen_penned.blog.dto.request.PostDetailsDTO;
+import com.pen_penned.blog.dto.response.PostResponse;
 import com.pen_penned.blog.model.User;
-import com.pen_penned.blog.payload.PostDTO;
-import com.pen_penned.blog.payload.PostDetailsDTO;
-import com.pen_penned.blog.payload.PostResponse;
 import jakarta.validation.Valid;
 
 import java.nio.file.AccessDeniedException;

@@ -1,12 +1,12 @@
 package com.pen_penned.blog.service;
 
 import com.pen_penned.blog.dto.request.CommentDTO;
+import com.pen_penned.blog.dto.request.PostDTO;
+import com.pen_penned.blog.dto.request.PostDetailsDTO;
+import com.pen_penned.blog.dto.response.PostResponse;
 import com.pen_penned.blog.exception.ResourceNotFoundException;
 import com.pen_penned.blog.model.Post;
 import com.pen_penned.blog.model.User;
-import com.pen_penned.blog.payload.PostDTO;
-import com.pen_penned.blog.payload.PostDetailsDTO;
-import com.pen_penned.blog.payload.PostResponse;
 import com.pen_penned.blog.repositories.CommentRepository;
 import com.pen_penned.blog.repositories.PostRepository;
 import com.pen_penned.blog.util.AuthUtil;
@@ -38,7 +38,7 @@ public class PostServiceImpl implements PostService {
         post.setAuthor(user);
 
         // Set published to true
-        post.setIsPublished(true);
+        post.setPublished(true);
 
         List<Post> postList = user.getPosts();
         postList.add(post);
@@ -48,7 +48,8 @@ public class PostServiceImpl implements PostService {
         PostDTO savedPostDTO = modelMapper.map(savedPost, PostDTO.class);
 
         // Set author details
-        savedPostDTO.setAuthorName(user.getFirstName());
+        savedPostDTO.setAuthorFirstName(user.getFirstName());
+        savedPostDTO.setAuthorLastName(user.getLastName());
 
         //  Ensure comments is zero
         savedPostDTO.setCommentCount(0);
@@ -60,23 +61,27 @@ public class PostServiceImpl implements PostService {
     public PostResponse getAllPosts(Integer pageNumber, Integer pageSize,
                                     String sortBy, String sortOrder) {
 
+        //  Sort configuration
         Sort sortByAnyOrder = sortOrder.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAnyOrder);
 
+        // Fetch posts
         Page<Post> pagePosts = postRepository.findAll(pageDetails);
 
         List<Post> posts = pagePosts.getContent();
 
+        // Convert posts to DTOs
         List<PostDTO> postDTOS = posts.stream()
                 .map(post -> {
                     PostDTO postDTO = modelMapper.map(post, PostDTO.class);
-                    postDTO.setCommentCount(commentRepository.getCommentCountByPostId(post.getPostId())); // Fetch comment count only
+                    postDTO.setCommentCount(commentRepository.getCommentCountByPostId(post.getId()));
                     return postDTO;
                 }).toList();
 
+        // Prepare PostResponse
         PostResponse postResponse = new PostResponse();
         postResponse.setContent(postDTOS);
         postResponse.setPageNumber(pagePosts.getNumber());
@@ -84,18 +89,21 @@ public class PostServiceImpl implements PostService {
         postResponse.setTotalElements(pagePosts.getTotalElements());
         postResponse.setTotalPages(pagePosts.getTotalPages());
         postResponse.setLastPage(pagePosts.isLast());
+
         return postResponse;
     }
 
     @Override
     public PostDetailsDTO getPostById(Long postId) {
+        // Fetch the post by ID
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "postId", postId));
 
+        // Map post to DTO
         PostDetailsDTO postDetailsDTO = modelMapper.map(post, PostDetailsDTO.class);
 
         // Set comment count
-        postDetailsDTO.setCommentCount(commentRepository.getCommentCountByPostId(post.getPostId()));
+        postDetailsDTO.setCommentCount(commentRepository.getCommentCountByPostId(post.getId()));
 
         // Load comments with author names
         List<CommentDTO> comments = post.getComments().stream()
@@ -110,8 +118,13 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<PostDTO> getUserPosts(User user) {
         List<Post> posts = postRepository.findByAuthor(user);
+
         return posts.stream()
-                .map(post -> modelMapper.map(post, PostDTO.class))
+                .map(post -> {
+                    PostDTO postDTO = modelMapper.map(post, PostDTO.class);
+                    postDTO.setCommentCount(post.getComments().size());
+                    return postDTO;
+                })
                 .toList();
     }
 
@@ -134,7 +147,7 @@ public class PostServiceImpl implements PostService {
         if (postDTO.getSlug() != null) existingPost.setSlug(postDTO.getSlug());
         if (postDTO.getTags() != null) existingPost.setTags(postDTO.getTags());
         if (postDTO.getCoverImageUrl() != null) existingPost.setCoverImageUrl(postDTO.getCoverImageUrl());
-        if (postDTO.getIsPublished() != null) existingPost.setIsPublished(postDTO.getIsPublished());
+        if (postDTO.getPublished() != null) existingPost.setPublished(postDTO.getPublished());
 
         // Save updated post
         Post updatedPost = postRepository.save(existingPost);
