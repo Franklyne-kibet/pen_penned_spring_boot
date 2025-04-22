@@ -1,11 +1,10 @@
 package com.pen_penned.blog.controller;
 
 import com.pen_penned.blog.config.AppConstants;
-import com.pen_penned.blog.dto.response.CommentResponse;
+import com.pen_penned.blog.dto.request.PostDTO;
+import com.pen_penned.blog.dto.request.PostDetailsDTO;
+import com.pen_penned.blog.dto.response.PostResponse;
 import com.pen_penned.blog.model.User;
-import com.pen_penned.blog.payload.PostDTO;
-import com.pen_penned.blog.payload.PostDetailsDTO;
-import com.pen_penned.blog.payload.PostResponse;
 import com.pen_penned.blog.service.CommentService;
 import com.pen_penned.blog.service.PostService;
 import com.pen_penned.blog.util.AuthUtil;
@@ -54,23 +53,6 @@ public class PostController {
         PostDetailsDTO postDTO = postService.getPostById(postId);
         return new ResponseEntity<>(postDTO, HttpStatus.OK);
     }
-
-    @GetMapping("/posts/{postId}/comments")
-    public ResponseEntity<CommentResponse> getPostComments(
-            @PathVariable Long postId,
-            @RequestParam(name = "pageNumber",
-                    defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
-            @RequestParam(name = "pageSize",
-                    defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
-            @RequestParam(name = "sortBy",
-                    defaultValue = AppConstants.SORT_COMMENTS_BY, required = false) String sortBy,
-            @RequestParam(name = "sortOrder",
-                    defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
-        CommentResponse commentResponse = (CommentResponse) commentService.getCommentsByPost(postId,
-                pageNumber, pageSize, sortBy, sortOrder);
-        return new ResponseEntity<>(commentResponse, HttpStatus.OK);
-    }
-
 
     @GetMapping("/users/posts")
     public ResponseEntity<List<PostDTO>> getUserPosts() {

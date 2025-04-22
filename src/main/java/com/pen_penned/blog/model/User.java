@@ -44,12 +44,12 @@ public class User {
     @ToString.Exclude
     private String password;
 
-    @Column(nullable = false, updatable = false)
     @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
     @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @ManyToMany(cascade = {CascadeType.MERGE},

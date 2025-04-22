@@ -32,10 +32,12 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = modelMapper.map(commentDTO, Comment.class);
         comment.setAuthor(user);
 
+        // Add comment to user's comment list
         List<Comment> commentList = user.getComments();
         commentList.add(comment);
         user.setComments(commentList);
 
+        // save the comment in the database
         Comment savedComment = commentRepository.save(comment);
         return modelMapper.map(savedComment, CommentDTO.class);
     }
@@ -51,16 +53,22 @@ public class CommentServiceImpl implements CommentService {
 
 
     @Override
-    public Object getCommentsByPost(
-            Long postId, Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+    public CommentResponse getCommentsByPost(
+            Long postId, Integer pageNumber,
+            Integer pageSize, String sortBy,
+            String sortOrder) {
 
+        //  Sort configuration
         Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+
+        // Fetch comments
         Page<Comment> commentPage = commentRepository.findCommentsByPostId(postId, pageDetails);
 
+        // Convert comments to DTOs
         List<CommentDTO> commentDTOS = commentPage.getContent().stream()
                 .map(comment -> modelMapper.map(comment, CommentDTO.class))
                 .toList();
@@ -75,20 +83,50 @@ public class CommentServiceImpl implements CommentService {
         );
     }
 
+    @Transactional
+    @Override
+    public CommentDTO updateComment(Long commentId, CommentDTO commentDTO) throws AccessDeniedException {
+        // Fetch the existing comment
+        Comment existingComment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment", "commentId", commentId));
+
+        // Check if the logged-in user is the owner of the comment
+        User loggedInUser = authUtil.loggedInUser();
+        if (!existingComment.getAuthor().getId().equals(loggedInUser.getId())) {
+            throw new AccessDeniedException("You do not have permission to update this comment.");
+        }
+
+        // Update only non-null fields
+        if (commentDTO.getContent() != null) existingComment.setContent(commentDTO.getContent());
+
+        // Save the updated comment
+        Comment updatedComment = commentRepository.save(existingComment);
+
+        // Convert updated comment to DTO
+        return modelMapper.map(updatedComment, CommentDTO.class);
+    }
 
     @Override
     @Transactional
     public void deleteComment(Long commentId) throws AccessDeniedException {
+        // Fetch the comment from the database
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment", "commentId", commentId));
 
+        // Get the logged-in user
         User loggedInUser = authUtil.loggedInUser();
+
+        // Check if the logged-in user is the author of the comment
         if (!comment.getAuthor().getId().equals(loggedInUser.getId())) {
             throw new AccessDeniedException("You do not have permission to delete this comment.");
         }
 
+        // Remove comment from the author's list
+        User author = comment.getAuthor();
+        author.getComments().remove(comment);
+
+        // Delete the comment from the repository
         commentRepository.delete(comment);
     }
-
 
 }

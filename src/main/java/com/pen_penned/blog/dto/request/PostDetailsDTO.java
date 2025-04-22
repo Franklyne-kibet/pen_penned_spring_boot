@@ -1,7 +1,6 @@
-package com.pen_penned.blog.payload;
+package com.pen_penned.blog.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.pen_penned.blog.dto.request.CommentDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,17 +13,18 @@ import java.util.List;
 @AllArgsConstructor
 public class PostDetailsDTO {
 
-    private Long postId;
+    private Long id;
     private String title;
     private String content;
     private String slug;
-    private String tags;
+    private List<String> tags;
     private String coverImageUrl;
 
-    private Boolean isPublished = false;
+    private Boolean published = false;
 
     private Long authorId;
-    private String authorName;
+    private String authorFirstName;
+    private String authorLastName;
 
     private Integer commentCount;
     private List<CommentDTO> comments;
