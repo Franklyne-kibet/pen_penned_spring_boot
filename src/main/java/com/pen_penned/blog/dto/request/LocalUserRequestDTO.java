@@ -6,16 +6,21 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class OAuth2UserDTO {
+public class LocalUserRequest {
 
     @NotBlank
-    @Size(min = 1, max = 50)
+    @Size(min = 3, max = 50)
     private String firstName;
 
-    @Size(max = 50)
+    @NotBlank
+    @Size(min = 3, max = 50)
     private String lastName;
 
     @NotBlank
     @Email
     private String email;
+
+    @NotBlank
+    @Size(min = 6, max = 120)
+    private String password;
 }

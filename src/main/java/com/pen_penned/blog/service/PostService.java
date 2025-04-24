@@ -1,26 +1,42 @@
 package com.pen_penned.blog.service;
 
-import com.pen_penned.blog.dto.request.PostDTO;
-import com.pen_penned.blog.dto.request.PostDetailsDTO;
+import com.pen_penned.blog.dto.request.PostRequest;
+import com.pen_penned.blog.dto.response.PageResponse;
+import com.pen_penned.blog.dto.response.PostDetailsResponse;
 import com.pen_penned.blog.dto.response.PostResponse;
 import com.pen_penned.blog.model.User;
 import jakarta.validation.Valid;
 
 import java.nio.file.AccessDeniedException;
-import java.util.List;
 
 public interface PostService {
 
 
-    PostDTO createPost(@Valid PostDTO postDTO, User user);
+    PostResponse createPost(@Valid PostRequest postRequest, User user);
 
-    PostResponse getAllPosts(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder);
+    PageResponse<PostResponse> getAllPosts(
+            Integer pageNumber,
+            Integer pageSize,
+            String sortBy,
+            String sortOrder);
 
-    PostDetailsDTO getPostById(Long postId);
+    PostDetailsResponse getPostById(Long postId);
 
-    List<PostDTO> getUserPosts(User user);
+    PageResponse<PostResponse> getUserPosts(
+            User user,
+            Integer pageNumber,
+            Integer pageSize,
+            String sortBy,
+            String sortOrder);
 
-    PostDTO updatePost(Long postId, @Valid PostDTO postDTO) throws AccessDeniedException;
+    PageResponse<PostResponse> getPostsByUserId(
+            Long userId,
+            Integer pageNumber,
+            Integer pageSize,
+            String sortBy,
+            String sortOrder);
+
+    PostResponse updatePost(Long postId, @Valid PostRequest postRequest) throws AccessDeniedException;
 
     void deletePost(Long postId) throws AccessDeniedException;
 

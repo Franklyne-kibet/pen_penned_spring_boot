@@ -1,6 +1,6 @@
 package com.pen_penned.blog.service;
 
-import com.pen_penned.blog.dto.request.BookmarkDTO;
+import com.pen_penned.blog.dto.request.BookmarkRequest;
 import com.pen_penned.blog.dto.response.BookmarkResponse;
 import com.pen_penned.blog.dto.response.PageResponse;
 import jakarta.transaction.Transactional;
@@ -10,7 +10,7 @@ import java.nio.file.AccessDeniedException;
 
 public interface BookmarkService {
 
-    BookmarkResponse createBookMark(@Valid BookmarkDTO bookmarkDTO, Long userId);
+    BookmarkResponse createBookMark(@Valid BookmarkRequest bookmarkRequest, Long userId);
 
     @Transactional
     void deleteBookmark(Long bookmarkId) throws AccessDeniedException;

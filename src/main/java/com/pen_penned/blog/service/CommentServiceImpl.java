@@ -1,11 +1,14 @@
 package com.pen_penned.blog.service;
 
-import com.pen_penned.blog.dto.request.CommentDTO;
+import com.pen_penned.blog.dto.request.CommentRequest;
 import com.pen_penned.blog.dto.response.CommentResponse;
+import com.pen_penned.blog.dto.response.PageResponse;
 import com.pen_penned.blog.exception.ResourceNotFoundException;
 import com.pen_penned.blog.model.Comment;
+import com.pen_penned.blog.model.Post;
 import com.pen_penned.blog.model.User;
 import com.pen_penned.blog.repositories.CommentRepository;
+import com.pen_penned.blog.repositories.PostRepository;
 import com.pen_penned.blog.util.AuthUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -23,39 +26,54 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
 
-    private final ModelMapper modelMapper;
-    private final CommentRepository commentRepository;
     private final AuthUtil authUtil;
+    private final ModelMapper modelMapper;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
 
     @Override
-    public CommentDTO createComment(CommentDTO commentDTO, User user) {
-        Comment comment = modelMapper.map(commentDTO, Comment.class);
-        comment.setAuthor(user);
+    public CommentResponse createComment(CommentRequest commentRequest, User user) {
+        Comment comment = Comment.builder()
+                .content(commentRequest.getContent())
+                .author(user)
+                .build();
 
-        // Add comment to user's comment list
-        List<Comment> commentList = user.getComments();
-        commentList.add(comment);
-        user.setComments(commentList);
+        Post post = postRepository.findById(commentRequest.getPostId())
+                .orElseThrow(() -> new ResourceNotFoundException("Post", "postId", commentRequest.getPostId()));
+        comment.setPost(post);
+
+        post.addComment(comment);
+        user.addComment(comment);
 
         // save the comment in the database
         Comment savedComment = commentRepository.save(comment);
-        return modelMapper.map(savedComment, CommentDTO.class);
+
+        CommentResponse commentResponse = modelMapper.map(savedComment, CommentResponse.class);
+
+        // Set author details
+        commentResponse.setAuthorFirstName(user.getFirstName());
+        commentResponse.setAuthorLastName(user.getLastName());
+        commentResponse.setPostId(commentRequest.getPostId());
+
+        return commentResponse;
     }
 
 
     @Override
-    public CommentDTO getCommentById(Long commentId) {
+    public CommentResponse getCommentById(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment", "commentId", commentId));
 
-        return modelMapper.map(comment, CommentDTO.class);
+        return modelMapper.map(comment, CommentResponse.class);
     }
 
 
     @Override
-    public CommentResponse getCommentsByPost(
-            Long postId, Integer pageNumber,
-            Integer pageSize, String sortBy,
+    public PageResponse<CommentResponse> getCommentsByPost(
+            Long postId,
+            Integer pageNumber,
+            Integer pageSize,
+            String sortBy,
             String sortOrder) {
 
         //  Sort configuration
@@ -69,12 +87,13 @@ public class CommentServiceImpl implements CommentService {
         Page<Comment> commentPage = commentRepository.findCommentsByPostId(postId, pageDetails);
 
         // Convert comments to DTOs
-        List<CommentDTO> commentDTOS = commentPage.getContent().stream()
-                .map(comment -> modelMapper.map(comment, CommentDTO.class))
+        List<CommentResponse> commentResponse = commentPage.getContent().stream()
+                .map(comment -> modelMapper.map(comment, CommentResponse.class))
                 .toList();
 
-        return new CommentResponse(
-                commentDTOS,
+        // Return paginated response
+        return new PageResponse<>(
+                commentResponse,
                 commentPage.getNumber(),
                 commentPage.getSize(),
                 commentPage.getTotalElements(),
@@ -85,7 +104,9 @@ public class CommentServiceImpl implements CommentService {
 
     @Transactional
     @Override
-    public CommentDTO updateComment(Long commentId, CommentDTO commentDTO) throws AccessDeniedException {
+    public CommentResponse updateComment(
+            Long commentId,
+            CommentRequest commentRequest) throws AccessDeniedException {
         // Fetch the existing comment
         Comment existingComment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment", "commentId", commentId));
@@ -97,13 +118,14 @@ public class CommentServiceImpl implements CommentService {
         }
 
         // Update only non-null fields
-        if (commentDTO.getContent() != null) existingComment.setContent(commentDTO.getContent());
+        if (commentRequest.getContent() != null)
+            existingComment.setContent(commentRequest.getContent());
 
         // Save the updated comment
         Comment updatedComment = commentRepository.save(existingComment);
 
-        // Convert updated comment to DTO
-        return modelMapper.map(updatedComment, CommentDTO.class);
+        // Map to response
+        return modelMapper.map(updatedComment, CommentResponse.class);
     }
 
     @Override
@@ -121,9 +143,8 @@ public class CommentServiceImpl implements CommentService {
             throw new AccessDeniedException("You do not have permission to delete this comment.");
         }
 
-        // Remove comment from the author's list
-        User author = comment.getAuthor();
-        author.getComments().remove(comment);
+        comment.getPost().removeComment(comment);
+        comment.getAuthor().removeComment(comment);
 
         // Delete the comment from the repository
         commentRepository.delete(comment);

@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class BookmarkDTO {
+public class BookmarkRequestDTO {
 
     @NotNull(message = "Post ID is required")
     private Long postId;

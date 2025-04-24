@@ -1,6 +1,6 @@
 package com.pen_penned.blog.service;
 
-import com.pen_penned.blog.dto.request.BookmarkDTO;
+import com.pen_penned.blog.dto.request.BookmarkRequest;
 import com.pen_penned.blog.dto.response.BookmarkResponse;
 import com.pen_penned.blog.dto.response.PageResponse;
 import com.pen_penned.blog.exception.ResourceNotFoundException;
@@ -33,11 +33,11 @@ public class BookmarkServiceImpl implements BookmarkService {
 
 
     @Override
-    public BookmarkResponse createBookMark(BookmarkDTO bookmarkDTO, Long userId) {
+    public BookmarkResponse createBookMark(BookmarkRequest bookmarkRequest, Long userId) {
         User user = authUtil.loggedInUser();
 
-        Post post = postRepository.findById(bookmarkDTO.getPostId())
-                .orElseThrow(() -> new ResourceNotFoundException("Post", "postId", bookmarkDTO.getPostId()));
+        Post post = postRepository.findById(bookmarkRequest.getPostId())
+                .orElseThrow(() -> new ResourceNotFoundException("Post", "postId", bookmarkRequest.getPostId()));
 
         Bookmark bookmark = Bookmark.builder()
                 .user(user)
