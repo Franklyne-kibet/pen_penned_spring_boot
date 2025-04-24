@@ -69,7 +69,7 @@ public class PostController {
     }
 
     @DeleteMapping("/posts/{postId}")
-    public ResponseEntity<String> deletePost(@PathVariable Long postId) throws AccessDeniedException {
+    public ResponseEntity<Void> deletePost(@PathVariable Long postId) throws AccessDeniedException {
         postService.deletePost(postId);
         return ResponseEntity.noContent().build();
     }

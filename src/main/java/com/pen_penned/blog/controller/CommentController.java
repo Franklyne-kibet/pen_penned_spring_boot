@@ -60,7 +60,7 @@ public class CommentController {
     }
 
     @DeleteMapping("/comments/{commentId}")
-    public ResponseEntity<String> deleteComment(@PathVariable Long commentId) throws AccessDeniedException {
+    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) throws AccessDeniedException {
         commentService.deleteComment(commentId);
         return ResponseEntity.noContent().build();
     }
