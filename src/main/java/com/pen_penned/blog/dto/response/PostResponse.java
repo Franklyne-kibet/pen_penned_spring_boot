@@ -1,21 +1,38 @@
 package com.pen_penned.blog.dto.response;
 
-import com.pen_penned.blog.dto.request.PostDTO;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostResponse {
 
-    private List<PostDTO> content;
-    private Integer pageNumber;
-    private Integer pageSize;
-    private Long totalElements;
-    private Integer totalPages;
-    private boolean lastPage;
+    private Long id;
+    private String title;
+    private String content;
+    private String slug;
+    private List<String> tags;
+    private String coverImageUrl;
+
+    private Boolean published = false;
+
+    private Long authorId;
+    private String authorFirstName;
+    private String authorLastName;
+
+    private Integer commentCount;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createdAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updatedAt;
 }
