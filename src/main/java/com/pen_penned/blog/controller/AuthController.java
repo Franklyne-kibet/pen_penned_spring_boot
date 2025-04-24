@@ -1,6 +1,6 @@
 package com.pen_penned.blog.controller;
 
-import com.pen_penned.blog.dto.request.LocalUserDTO;
+import com.pen_penned.blog.dto.request.LocalUserRequestDTO;
 import com.pen_penned.blog.model.AppRole;
 import com.pen_penned.blog.model.Role;
 import com.pen_penned.blog.model.User;
@@ -107,15 +107,15 @@ public class AuthController {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: Email is already in use!"));
         }
 
-        //  Create SignupRequest to LocalUserDTO
-        LocalUserDTO localUserDTO = new LocalUserDTO();
-        localUserDTO.setFirstName(signupRequest.getFirstName());
-        localUserDTO.setLastName(signupRequest.getLastName());
-        localUserDTO.setEmail(signupRequest.getEmail());
-        localUserDTO.setPassword(signupRequest.getPassword());
+        //  Create SignupRequest to LocalUserRequest
+        LocalUserRequestDTO localUserRequestDTO = new LocalUserRequestDTO();
+        localUserRequestDTO.setFirstName(signupRequest.getFirstName());
+        localUserRequestDTO.setLastName(signupRequest.getLastName());
+        localUserRequestDTO.setEmail(signupRequest.getEmail());
+        localUserRequestDTO.setPassword(signupRequest.getPassword());
 
         // Use the service to create the user
-        User user = userService.createLocalUser(localUserDTO);
+        User user = userService.createLocalUser(localUserRequestDTO);
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }

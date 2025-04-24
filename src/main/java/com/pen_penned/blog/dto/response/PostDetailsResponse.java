@@ -1,17 +1,21 @@
-package com.pen_penned.blog.dto.request;
+package com.pen_penned.blog.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.pen_penned.blog.dto.request.CommentRequest;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostDTO {
+public class PostDetailsResponse {
 
     private Long id;
     private String title;
@@ -27,6 +31,7 @@ public class PostDTO {
     private String authorLastName;
 
     private Integer commentCount;
+    private List<CommentRequest> comments;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;

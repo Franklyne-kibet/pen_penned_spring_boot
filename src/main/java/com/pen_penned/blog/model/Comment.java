@@ -37,13 +37,9 @@ public class Comment {
     @JoinColumn(name = "user_id", nullable = false)
     private User author;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
-
-    @Column(name = "is_deleted", nullable = false)
-    @Builder.Default
-    private boolean deleted = false;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -57,11 +53,4 @@ public class Comment {
     @Column(nullable = false)
     private long version;
 
-    /* // Helper method for bidirectional relationship management
-    public void setPost(Post post) {
-        this.post = post;
-        if (post != null && !post.getComments().contains(this)) {
-            post.getComments().add(this);
-        }
-    } */
 }

@@ -1,11 +1,11 @@
 package com.pen_penned.blog.controller;
 
 import com.pen_penned.blog.config.AppConstants;
-import com.pen_penned.blog.dto.request.PostDTO;
-import com.pen_penned.blog.dto.request.PostDetailsDTO;
+import com.pen_penned.blog.dto.request.PostRequest;
+import com.pen_penned.blog.dto.response.PageResponse;
+import com.pen_penned.blog.dto.response.PostDetailsResponse;
 import com.pen_penned.blog.dto.response.PostResponse;
 import com.pen_penned.blog.model.User;
-import com.pen_penned.blog.service.CommentService;
 import com.pen_penned.blog.service.PostService;
 import com.pen_penned.blog.util.AuthUtil;
 import jakarta.validation.Valid;
@@ -15,26 +15,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.AccessDeniedException;
-import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/posts")
 @RequiredArgsConstructor
 public class PostController {
 
     private final AuthUtil authUtil;
     private final PostService postService;
-    private final CommentService commentService;
 
-    @PostMapping("/posts")
-    public ResponseEntity<PostDTO> createPost(@Valid @RequestBody PostDTO postDTO) {
+    @PostMapping
+    public ResponseEntity<PostResponse> createPost(@Valid @RequestBody PostRequest postRequest) {
         User user = authUtil.loggedInUser();
-        PostDTO savedPostDTO = postService.createPost(postDTO, user);
-        return new ResponseEntity<>(savedPostDTO, HttpStatus.CREATED);
+        PostResponse savedPost = postService.createPost(postRequest, user);
+        return new ResponseEntity<>(savedPost, HttpStatus.CREATED);
     }
 
-    @GetMapping("/posts")
-    public ResponseEntity<PostResponse> getAllPosts(
+    @GetMapping
+    public ResponseEntity<PageResponse<PostResponse>> getAllPosts(
             @RequestParam(name = "pageNumber",
                     defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize",
@@ -44,32 +42,26 @@ public class PostController {
             @RequestParam(name = "sortOrder",
                     defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder
     ) {
-        PostResponse postResponse = postService.getAllPosts(pageNumber, pageSize, sortBy, sortOrder);
+        PageResponse<PostResponse> postResponse = postService.getAllPosts(pageNumber, pageSize, sortBy, sortOrder);
         return new ResponseEntity<>(postResponse, HttpStatus.OK);
     }
 
-    @GetMapping("/posts/{postId}")
-    public ResponseEntity<PostDetailsDTO> getPostById(@PathVariable Long postId) {
-        PostDetailsDTO postDTO = postService.getPostById(postId);
-        return new ResponseEntity<>(postDTO, HttpStatus.OK);
+    @GetMapping("/{postId}")
+    public ResponseEntity<PostDetailsResponse> getPostById(@PathVariable Long postId) {
+        PostDetailsResponse postDetailsResponse = postService.getPostById(postId);
+        return new ResponseEntity<>(postDetailsResponse, HttpStatus.OK);
     }
 
-    @GetMapping("/users/posts")
-    public ResponseEntity<List<PostDTO>> getUserPosts() {
-        User user = authUtil.loggedInUser();
-        List<PostDTO> postList = postService.getUserPosts(user);
-        return new ResponseEntity<>(postList, HttpStatus.OK);
-    }
 
-    @PutMapping("/posts/{postId}")
-    public ResponseEntity<PostDTO> updatePostById(
-            @PathVariable Long postId, @Valid @RequestBody PostDTO postDTO) throws AccessDeniedException {
-        PostDTO updatedPost = postService.updatePost(postId, postDTO);
+    @PutMapping("/{postId}")
+    public ResponseEntity<PostResponse> updatePostById(
+            @PathVariable Long postId, @Valid @RequestBody PostRequest postRequest) throws AccessDeniedException {
+        PostResponse updatedPost = postService.updatePost(postId, postRequest);
         return new ResponseEntity<>(updatedPost, HttpStatus.OK);
     }
 
-    @DeleteMapping("/posts/{postId}")
-    public ResponseEntity<String> deletePost(@PathVariable Long postId) throws AccessDeniedException {
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<Void> deletePost(@PathVariable Long postId) throws AccessDeniedException {
         postService.deletePost(postId);
         return ResponseEntity.noContent().build();
     }

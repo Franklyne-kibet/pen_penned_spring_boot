@@ -1,7 +1,7 @@
 package com.pen_penned.blog.service;
 
-import com.pen_penned.blog.dto.request.LocalUserDTO;
-import com.pen_penned.blog.dto.request.OAuth2UserDTO;
+import com.pen_penned.blog.dto.request.LocalUserRequestDTO;
+import com.pen_penned.blog.dto.request.OAuth2UserRequestDTO;
 import com.pen_penned.blog.model.AppRole;
 import com.pen_penned.blog.model.AuthProvider;
 import com.pen_penned.blog.model.Role;
@@ -24,9 +24,12 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final ModelMapper modelMapper;
 
-    
-    public UserService(UserRepository userRepository, RoleRepository roleRepository,
-                       PasswordEncoder passwordEncoder, ModelMapper modelMapper) {
+
+    public UserService(
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            PasswordEncoder passwordEncoder,
+            ModelMapper modelMapper) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
@@ -34,12 +37,12 @@ public class UserService {
     }
 
     @Transactional
-    public User createLocalUser(LocalUserDTO localUserDTO) {
+    public User createLocalUser(LocalUserRequestDTO localUserRequestDTO) {
         // Map DTO to entity
-        User user = modelMapper.map(localUserDTO, User.class);
+        User user = modelMapper.map(localUserRequestDTO, User.class);
 
         // Encode password
-        user.setPassword(passwordEncoder.encode(localUserDTO.getPassword()));
+        user.setPassword(passwordEncoder.encode(localUserRequestDTO.getPassword()));
         user.setProvider(AuthProvider.LOCAL);
 
         // Set default USER role
@@ -49,9 +52,12 @@ public class UserService {
     }
 
     @Transactional
-    public User createOAuth2User(OAuth2UserDTO oauth2UserDTO, AuthProvider provider, String providerId) {
+    public User createOAuth2User(
+            OAuth2UserRequestDTO oauth2UserRequestDTO,
+            AuthProvider provider,
+            String providerId) {
         // Map DTO to entity
-        User user = modelMapper.map(oauth2UserDTO, User.class);
+        User user = modelMapper.map(oauth2UserRequestDTO, User.class);
 
         // Set OAuth provider details
         user.setProvider(provider);
@@ -65,9 +71,9 @@ public class UserService {
     }
 
     @Transactional
-    public User updateOAuth2User(User existingUser, OAuth2UserDTO oauth2UserDTO) {
-        existingUser.setFirstName(oauth2UserDTO.getFirstName());
-        existingUser.setLastName(oauth2UserDTO.getLastName());
+    public User updateOAuth2User(User existingUser, OAuth2UserRequestDTO oauth2UserRequestDTO) {
+        existingUser.setFirstName(oauth2UserRequestDTO.getFirstName());
+        existingUser.setLastName(oauth2UserRequestDTO.getLastName());
 
         return userRepository.save(existingUser);
     }

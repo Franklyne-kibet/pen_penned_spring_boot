@@ -75,7 +75,7 @@ public class User {
     @ToString.Exclude
     @OneToMany(mappedBy = "author", cascade = {CascadeType.PERSIST, CascadeType.MERGE},
             orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Comment> comments = new ArrayList<>();
+    private Set<Comment> comments = new HashSet<>();
 
     // Safe constructor for creating new users
     public static User createUser(String firstName, String lastName, String email, String encodedPassword) {
@@ -100,6 +100,16 @@ public class User {
 
     public Set<Role> getRoles() {
         return Collections.unmodifiableSet(roles);
+    }
+
+    public void addComment(Comment comment) {
+        comments.add(comment);
+        comment.setAuthor(this);
+    }
+
+    public void removeComment(Comment comment) {
+        comments.remove(comment);
+        comment.setAuthor(null);
     }
 
     // Password should only be set through proper encoding
