@@ -67,9 +67,6 @@ public class Post {
     @Builder.Default
     private List<Comment> comments = new ArrayList<>();
 
-    @Column(nullable = false)
-    private Boolean deleted = false;
-
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
