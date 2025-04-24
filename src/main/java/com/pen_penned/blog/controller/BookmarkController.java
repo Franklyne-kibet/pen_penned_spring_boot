@@ -1,7 +1,7 @@
 package com.pen_penned.blog.controller;
 
 import com.pen_penned.blog.config.AppConstants;
-import com.pen_penned.blog.dto.request.BookmarkDTO;
+import com.pen_penned.blog.dto.request.BookmarkRequest;
 import com.pen_penned.blog.dto.response.BookmarkResponse;
 import com.pen_penned.blog.dto.response.PageResponse;
 import com.pen_penned.blog.model.User;
@@ -24,9 +24,9 @@ public class BookmarkController {
     private final BookmarkService bookmarkService;
 
     @PostMapping
-    public ResponseEntity<BookmarkResponse> createBookmark(@Valid @RequestBody BookmarkDTO bookmarkDTO) {
+    public ResponseEntity<BookmarkResponse> createBookmark(@Valid @RequestBody BookmarkRequest bookmarkRequest) {
         User user = authUtil.loggedInUser();
-        BookmarkResponse bookmarkResponse = bookmarkService.createBookMark(bookmarkDTO, user.getId());
+        BookmarkResponse bookmarkResponse = bookmarkService.createBookMark(bookmarkRequest, user.getId());
         return new ResponseEntity<>(bookmarkResponse, HttpStatus.CREATED);
     }
 
