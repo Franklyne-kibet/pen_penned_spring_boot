@@ -1,6 +1,7 @@
 package com.pen_penned.blog.security.oauth2;
 
-import com.pen_penned.blog.dto.request.OAuth2UserDTO;
+
+import com.pen_penned.blog.dto.request.OAuth2UserRequestDTO;
 import com.pen_penned.blog.exception.OAuth2AuthenticationProcessingException;
 import com.pen_penned.blog.model.AuthProvider;
 import com.pen_penned.blog.model.User;
@@ -132,33 +133,33 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private User registerNewUser(OAuth2UserRequest oAuth2UserRequest,
                                  OAuth2UserInfo oAuth2UserInfo, AuthProvider provider) {
         // Create DTO with user info
-        OAuth2UserDTO oauth2UserDTO = new OAuth2UserDTO();
+        OAuth2UserRequestDTO oAuth2UserRequestDTO = new OAuth2UserRequestDTO();
 
         // Use the utility to split the name
         String[] nameParts = NameUtils.splitName(oAuth2UserInfo.getName(), oAuth2UserInfo.getEmail());
 
-        oauth2UserDTO.setFirstName(nameParts[0]);
-        oauth2UserDTO.setLastName(nameParts[1]);
-        oauth2UserDTO.setEmail(oAuth2UserInfo.getEmail());
+        oAuth2UserRequestDTO.setFirstName(nameParts[0]);
+        oAuth2UserRequestDTO.setLastName(nameParts[1]);
+        oAuth2UserRequestDTO.setEmail(oAuth2UserInfo.getEmail());
 
-        oauth2UserDTO.setEmail(oAuth2UserInfo.getEmail());
+        oAuth2UserRequestDTO.setEmail(oAuth2UserInfo.getEmail());
 
         // Use service to create user (no password needed)
-        return userService.createOAuth2User(oauth2UserDTO, provider, oAuth2UserInfo.getId());
+        return userService.createOAuth2User(oAuth2UserRequestDTO, provider, oAuth2UserInfo.getId());
     }
 
     private User updateExistingUser(User existingUser, OAuth2UserInfo oAuth2UserInfo) {
-        OAuth2UserDTO oauth2UserDTO = new OAuth2UserDTO();
+        OAuth2UserRequestDTO oAuth2UserRequestDTO = new OAuth2UserRequestDTO();
 
         // Use the utility to split the name
         String[] nameParts = NameUtils.splitName(oAuth2UserInfo.getName(), oAuth2UserInfo.getEmail());
 
-        oauth2UserDTO.setFirstName(nameParts[0]);
-        oauth2UserDTO.setLastName(nameParts[1]);
-        oauth2UserDTO.setEmail(oAuth2UserInfo.getEmail());
+        oAuth2UserRequestDTO.setFirstName(nameParts[0]);
+        oAuth2UserRequestDTO.setLastName(nameParts[1]);
+        oAuth2UserRequestDTO.setEmail(oAuth2UserInfo.getEmail());
 
         // Use service to update user
-        return userService.updateOAuth2User(existingUser, oauth2UserDTO);
+        return userService.updateOAuth2User(existingUser, oAuth2UserRequestDTO);
     }
 
 }
