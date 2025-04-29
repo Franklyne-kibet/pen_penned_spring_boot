@@ -5,8 +5,10 @@ import com.pen_penned.blog.dto.response.BookmarkResponse;
 import com.pen_penned.blog.dto.response.PageResponse;
 import com.pen_penned.blog.exception.ResourceNotFoundException;
 import com.pen_penned.blog.model.Bookmark;
+import com.pen_penned.blog.model.BookmarkFolder;
 import com.pen_penned.blog.model.Post;
 import com.pen_penned.blog.model.User;
+import com.pen_penned.blog.repositories.BookmarkFolderRepository;
 import com.pen_penned.blog.repositories.BookmarkRepository;
 import com.pen_penned.blog.repositories.PostRepository;
 import com.pen_penned.blog.util.AuthUtil;
@@ -21,14 +23,17 @@ import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class BookmarkServiceImpl implements BookmarkService {
 
+    private final AuthUtil authUtil;
     private final ModelMapper modelMapper;
     private final BookmarkRepository bookmarkRepository;
-    private final AuthUtil authUtil;
+    private final BookmarkFolderRepository bookmarkFolderRepository;
     private final PostRepository postRepository;
 
 
@@ -45,14 +50,27 @@ public class BookmarkServiceImpl implements BookmarkService {
                 .build();
 
         Bookmark savedBookmark = bookmarkRepository.save(bookmark);
-        return modelMapper.map(savedBookmark, BookmarkResponse.class);
+
+        // Convert to response
+        BookmarkResponse bookmarkResponse = modelMapper.map(savedBookmark, BookmarkResponse.class);
+
+        // If the post title is available, set it
+        if (post.getTitle() != null) {
+            bookmarkResponse.setPostTitle(post.getTitle());
+        }
+
+        return bookmarkResponse;
     }
 
 
     @Override
-    public PageResponse<BookmarkResponse> getUserBookmarks(Long userId, Integer pageNumber,
-                                                           Integer pageSize, String sortBy,
-                                                           String sortOrder) {
+    public PageResponse<BookmarkResponse> getUserBookmarks(
+            Long userId,
+            Integer pageNumber,
+            Integer pageSize,
+            String sortBy,
+            String sortOrder) {
+
         User user = authUtil.loggedInUser();
 
         // Sort configuration
@@ -69,7 +87,27 @@ public class BookmarkServiceImpl implements BookmarkService {
         List<BookmarkResponse> bookmarkResponses = bookmarkPage
                 .getContent()
                 .stream()
-                .map(bookmark -> modelMapper.map(bookmark, BookmarkResponse.class))
+                .map(bookmark -> {
+                    BookmarkResponse bookmarkResponse = modelMapper.map(bookmark, BookmarkResponse.class);
+
+                    // Add post title if available
+                    if (bookmark.getPost().getTitle() != null) {
+                        bookmarkResponse.setPostTitle(bookmark.getPost().getTitle());
+                    }
+
+                    // Add folder information
+                    List<BookmarkFolder> bookmarkFolders = bookmarkFolderRepository.findByBookmarkId(bookmark.getId());
+                    Set<BookmarkResponse.FolderMinimalResponse> folders = bookmarkFolders.stream()
+                            .map(bf -> BookmarkResponse.FolderMinimalResponse.builder()
+                                    .id(bf.getFolder().getId())
+                                    .name(bf.getFolder().getName())
+                                    .build())
+                            .collect(Collectors.toSet());
+                    bookmarkResponse.setFolders(folders);
+
+                    return bookmarkResponse;
+
+                })
                 .toList();
 
         return new PageResponse<>(
@@ -121,54 +159,11 @@ public class BookmarkServiceImpl implements BookmarkService {
             throw new AccessDeniedException("You do not have permission to delete this bookmark.");
         }
 
-        // Remove bookmark from user's list
-        // user.getBookmarks().remove(bookmark);
+        // First delete all bookmark-folder associations
+        List<BookmarkFolder> bookmarkFolders = bookmarkFolderRepository.findByBookmarkId(bookmarkId);
+        bookmarkFolderRepository.deleteAll(bookmarkFolders);
 
         // Delete from repository
         bookmarkRepository.delete(bookmark);
     }
-
-
-    /* @Override
-    @Transactional
-    public BookmarkDto.Response addBookmarkToFolder(Long bookmarkId, Long folderId) throws AccessDeniedException {
-        User user = authUtil.loggedInUser();
-
-        Bookmark bookmark = bookmarkRepository.findById(bookmarkId)
-                .orElseThrow(() -> new ResourceNotFoundException("Bookmark", "id", bookmarkId));
-
-        // Check if user owns this bookmark
-        if (!bookmark.getUser().getId().equals(user.getId())) {
-            throw new AccessDeniedException("You do not have permission to modify this bookmark.");
-        }
-
-        // In a real implementation, you would fetch the folder and validate ownership
-        // For simplicity, we'll just mention the update
-
-        // Update folder and save
-        // bookmark.setFolder(folder);
-        Bookmark updatedBookmark = bookmarkRepository.save(bookmark);
-
-        return modelMapper.map(updatedBookmark, BookmarkDto.Response.class);
-    }
-
-    @Override
-    @Transactional
-    public BookmarkDto.Response addNoteToBookmark(Long bookmarkId, String note) throws AccessDeniedException {
-        User user = authUtil.loggedInUser();
-
-        Bookmark bookmark = bookmarkRepository.findById(bookmarkId)
-                .orElseThrow(() -> new ResourceNotFoundException("Bookmark", "id", bookmarkId));
-
-        // Check if user owns this bookmark
-        if (!bookmark.getUser().getId().equals(user.getId())) {
-            throw new AccessDeniedException("You do not have permission to modify this bookmark.");
-        }
-
-        // Update note and save
-        bookmark.setNotes(note);
-        Bookmark updatedBookmark = bookmarkRepository.save(bookmark);
-
-        return modelMapper.map(updatedBookmark, BookmarkDto.Response.class);
-    } */
 }
