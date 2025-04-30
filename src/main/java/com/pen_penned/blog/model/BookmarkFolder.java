@@ -13,7 +13,10 @@ import java.util.Objects;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-@Table
+@Table(name = "bookmark_folders", indexes = {
+        @Index(name = "idx_bookmark_folder_bookmark", columnList = "bookmark_id"),
+        @Index(name = "idx_bookmark_folder_folder", columnList = "folder_id")
+})
 public class BookmarkFolder {
 
     @Id
@@ -21,12 +24,12 @@ public class BookmarkFolder {
     @Column(name = "bookmark_folder_id", updatable = false)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bookmark_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "bookmark_id")
     private Bookmark bookmark;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "folder_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "folder_id")
     private Folder folder;
 
     @CreationTimestamp
