@@ -37,3 +37,7 @@ build/
 *.env
 .env.dev
 .env.prod
+
+### Logs
+*.log
+application.log
