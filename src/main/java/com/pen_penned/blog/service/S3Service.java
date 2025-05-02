@@ -1,0 +1,4 @@
+package com.pen_penned.blog.service;
+
+public interface S3Service {
+}
