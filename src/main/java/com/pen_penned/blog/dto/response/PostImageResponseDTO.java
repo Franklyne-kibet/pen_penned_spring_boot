@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostImageResponse {
+public class PostImageResponseDTO {
 
     private Long id;
     private String originalFilename;
@@ -26,8 +26,8 @@ public class PostImageResponse {
     private Boolean featured;
     private LocalDateTime uploadedAt;
 
-    public static PostImageResponse fromEntity(PostImage image) {
-        return PostImageResponse.builder()
+    public static PostImageResponseDTO fromEntity(PostImage image) {
+        return PostImageResponseDTO.builder()
                 .id(image.getId())
                 .originalFilename(image.getOriginalFilename())
                 .contentType(image.getContentType())
@@ -35,11 +35,10 @@ public class PostImageResponse {
                 .imageUrl(image.getS3Url())
                 .thumbnailUrl(image.getThumbnailS3Url())
                 .uploadedAt(image.getUploadedAt())
-                // If you add the additional fields to your entity, uncomment these
-                // .altText(image.getAltText())
-                // .caption(image.getCaption())
-                // .displayOrder(image.getDisplayOrder())
-                // .featured(image.getFeatured())
+                .altText(image.getAltText())
+                .caption(image.getCaption())
+                .displayOrder(image.getDisplayOrder())
+                .featured(image.getFeatured())
                 .build();
     }
 }

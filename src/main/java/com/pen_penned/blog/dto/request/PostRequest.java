@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -18,6 +19,9 @@ public class PostRequest {
     private String slug;
     private List<String> tags;
     private String coverImageUrl;
+
+    @Builder.Default
+    private List<Long> imageIds = new ArrayList<>();
 
     @Builder.Default
     private Boolean published = false;

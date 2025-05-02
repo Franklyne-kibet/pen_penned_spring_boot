@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -32,6 +33,9 @@ public class PostDetailsResponse {
 
     private Integer commentCount;
     private List<CommentRequest> comments;
+
+    @Builder.Default
+    private List<PostImageResponseDTO> images = new ArrayList<>();
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
