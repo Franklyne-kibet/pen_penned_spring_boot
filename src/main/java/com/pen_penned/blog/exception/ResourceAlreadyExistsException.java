@@ -1,15 +1,13 @@
 package com.pen_penned.blog.exception;
 
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-@Setter
 public class ResourceAlreadyExistsException extends RuntimeException {
 
-    private String resourceName;
-    private String fieldName;
-    private Object fieldValue;
+    private final String resourceName;
+    private final String fieldName;
+    private final Object fieldValue;
 
     public ResourceAlreadyExistsException(String resourceName, String fieldName, Object fieldValue) {
         super(String.format("%s already exists with %s: %s", resourceName, fieldName, fieldValue));
