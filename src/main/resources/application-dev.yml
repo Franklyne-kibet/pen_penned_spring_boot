@@ -1,25 +1,30 @@
-# =========================
+# =====================================
 # Spring Boot Application Configuration
-# =========================
+# =====================================
 spring:
   application:
     name: blog-platform
+
 
   config:
     import: optional:file:.env.dev[.properties]
     activate-on-profile: dev
 
-  # =========================
   # JWT Configuration (JSON Web Tokens)
-  # =========================
   app:
     jwtSecret: ${JWT_SECRET}
     jwtExpirationMs: ${JWT_EXPIRATION_MS}
     jwtCookieName: ${JWT_COOKIE_NAME}
 
-  # =========================
+    # Image configuration
+    image:
+      thumbnail:
+        width: 300
+        height: 300
+      max-width: 1200
+      max-height: 800
+
   # Database Configuration (PostgreSQL)
-  # =========================
   datasource:
     url: ${DATABASE_URL}
     username: ${DB_USERNAME}
@@ -36,9 +41,7 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     # show-sql: true  # Uncomment to log SQL queries
 
-  # =========================
   # OAuth2 Authentication (GitHub & Google)
-  # =========================
   security:
     oauth2:
       client:
@@ -64,36 +67,40 @@ spring:
               user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
               user-name-attribute: sub
 
-# =========================
+  # File Upload Configuration
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+
+# AWS S3 Configuration
+aws:
+  s3:
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+    region: ${AWS_REGION}
+    bucket-name: ${AWS_S3_BUCKET_NAME}
+
 # Server Configuration
-# =========================
 # Needed for AWS Elastic Beanstalk or Docker deployments
 server:
   port: ${SERVER_PORT:8080}
 
-# =========================
 # Custom Application Configuration
-# =========================
-
 # Used by Spring Security's {baseUrl} expression in redirect-uri
 baseUrl: ${BASE_URL}
 
-# =========================
 # Frontend Configuration
-# =========================
 frontend:
   url: ${FRONTEND_URL}
 
-# =========================
 # Image Hosting Configuration
-# =========================
 image:
   base:
     url: ${IMAGE_BASE_URL}
 
-# =========================
 # Logging Configuration
-# =========================
 logging:
   level:
     root: DEBUG
