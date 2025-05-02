@@ -6,24 +6,38 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Value;
 
-@Data
-@Builder
-@NoArgsConstructor
+@Value
+@Builder(toBuilder = true)
 @AllArgsConstructor
 public class PostImageUpdateRequestDTO {
 
     @Size(max = 255, message = "Alt text must be less than 255 characters")
-    private String altText;
+    String altText;
 
-    private String caption;
+    String caption;
 
     @PositiveOrZero(message = "Display order must be a positive number or zero")
-    private Integer displayOrder;
+    Integer displayOrder;
 
     @JsonSetter(nulls = Nulls.SKIP)
     @Builder.Default
-    private Boolean featured = false;
+    Boolean featured = false;
+
+
+    public static PostImageUpdateRequestDTO withDisplayOrder(
+            PostImageUpdateRequestDTO original,
+            Integer displayOrder) {
+        return original.toBuilder()
+                .displayOrder(displayOrder)
+                .build();
+    }
+
+    public static PostImageUpdateRequestDTO createDefault(@PositiveOrZero int displayOrder) {
+        return PostImageUpdateRequestDTO.builder()
+                .displayOrder(displayOrder)
+                .featured(false)
+                .build();
+    }
 }

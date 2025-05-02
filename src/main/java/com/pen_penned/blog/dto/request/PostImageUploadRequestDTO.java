@@ -2,22 +2,42 @@ package com.pen_penned.blog.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Value;
 
-@Data
-@Builder
-@NoArgsConstructor
+@Value
+@Builder(toBuilder = true)
 @AllArgsConstructor
 public class PostImageUploadRequestDTO {
 
-    private String altText;
-    private String caption;
-    private Integer displayOrder;
+    @Size(max = 255, message = "Alt text must be less than 255 characters")
+    String altText;
+
+    String caption;
+
+    @PositiveOrZero(message = "Display order must be a positive number or zero")
+    Integer displayOrder;
 
     @JsonSetter(nulls = Nulls.SKIP)
     @Builder.Default
-    private Boolean featured = false;
+    Boolean featured = false;
+
+
+    public static PostImageUploadRequestDTO withDisplayOrder(
+            PostImageUploadRequestDTO original,
+            Integer displayOrder) {
+        return original.toBuilder()
+                .displayOrder(displayOrder)
+                .build();
+    }
+
+    public static PostImageUploadRequestDTO createDefault(@PositiveOrZero int displayOrder) {
+        return PostImageUploadRequestDTO.builder()
+                .displayOrder(displayOrder)
+                .featured(false)
+                .build();
+    }
 }

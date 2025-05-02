@@ -175,7 +175,8 @@ public class AuthController {
             Map<String, String> response = new HashMap<>();
             response.put("username", userDetails.getUsername());
             response.put("token", jwtUtils.generateJwtToken(
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())));
+                    new UsernamePasswordAuthenticationToken(userDetails, null,
+                            userDetails.getAuthorities())));
 
             return ResponseEntity.ok(response);
         }

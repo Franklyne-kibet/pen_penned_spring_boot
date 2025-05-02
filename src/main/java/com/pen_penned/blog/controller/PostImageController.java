@@ -56,8 +56,23 @@ public class PostImageController {
         ImageValidator.validateImage(file);
 
         try {
+            // Process metadata
+            PostImageUploadRequestDTO processedMetadata;
+            if (metadata == null) {
+                // Create default metadata if none provided
+                processedMetadata = PostImageUploadRequestDTO.createDefault(0);
+            } else {
+                // Ensure displayOder is set if not provided
+                if (metadata.getDisplayOrder() == null) {
+                    processedMetadata = PostImageUploadRequestDTO.withDisplayOrder(metadata, 0);
+                } else {
+                    // Use metadata as is if displayOrder is already set
+                    processedMetadata = metadata;
+                }
+            }
+
             PostImage uploadedImage = postImageService
-                    .uploadPostImage(postId, file, metadata)
+                    .uploadPostImage(postId, file, processedMetadata)
                     .get(); // Wait for async processing to complete
 
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -82,24 +97,31 @@ public class PostImageController {
         postService.verifyPostOwnership(postId, user.getId());
 
         List<CompletableFuture<PostImage>> futures = new ArrayList<>();
+        List<PostImageUploadRequestDTO> processedMetadata = new ArrayList<>();
 
         // Prepare metadata list if needed
-        if (imageMetadataList == null) {
-            imageMetadataList = new ArrayList<>();
+        if (imageMetadataList == null || imageMetadataList.isEmpty()) {
+            // Create default metadata for each image
             for (int i = 0; i < images.size(); i++) {
-                imageMetadataList.add(new PostImageUploadRequestDTO());
+                processedMetadata.add(PostImageUploadRequestDTO.createDefault(i));
             }
-        } else if (imageMetadataList.size() < images.size()) {
-            for (int i = imageMetadataList.size(); i < images.size(); i++) {
-                imageMetadataList.add(new PostImageUploadRequestDTO());
+        } else {
+            // Process existing metadata
+            for (int i = 0; i < images.size(); i++) {
+                if (i < imageMetadataList.size()) {
+                    PostImageUploadRequestDTO original = imageMetadataList.get(i);
+                    Integer displayOrder = original.getDisplayOrder() != null ? original.getDisplayOrder() : i;
+                    processedMetadata.add(PostImageUploadRequestDTO.withDisplayOrder(original, displayOrder));
+                } else {
+                    // For any extra images without metadata
+                    processedMetadata.add(PostImageUploadRequestDTO.createDefault(i));
+                }
             }
         }
 
-        // Upload each image
+        // Upload each image its processed metadata
         for (int i = 0; i < images.size(); i++) {
-            PostImageUploadRequestDTO metadata = imageMetadataList.get(i);
-            metadata.setDisplayOrder(metadata.getDisplayOrder() != null ? metadata.getDisplayOrder() : i);
-            futures.add(postImageService.uploadPostImage(postId, images.get(i), metadata));
+            futures.add(postImageService.uploadPostImage(postId, images.get(i), processedMetadata.get(i)));
         }
 
         try {
