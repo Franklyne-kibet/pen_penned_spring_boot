@@ -65,6 +65,10 @@ public class Post {
     @Builder.Default
     private Set<Comment> comments = new HashSet<>();
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<PostImage> images = new ArrayList<>();
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -108,4 +112,14 @@ public class Post {
         comment.setPost(null);
     }
 
+    // Helper method for image management
+    public void addImage(PostImage image) {
+        images.add(image);
+        image.setPost(this);
+    }
+
+    public void removeImage(PostImage image) {
+        images.remove(image);
+        image.setPost(null);
+    }
 }
