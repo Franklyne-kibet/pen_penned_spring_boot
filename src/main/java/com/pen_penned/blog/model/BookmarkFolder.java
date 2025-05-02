@@ -25,11 +25,11 @@ public class BookmarkFolder {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "bookmark_id")
+    @JoinColumn(name = "bookmark_id", nullable = false)
     private Bookmark bookmark;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "folder_id")
+    @JoinColumn(name = "folder_id", nullable = false)
     private Folder folder;
 
     @CreationTimestamp

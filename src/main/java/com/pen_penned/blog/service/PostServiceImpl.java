@@ -4,11 +4,14 @@ import com.pen_penned.blog.dto.request.CommentRequest;
 import com.pen_penned.blog.dto.request.PostRequest;
 import com.pen_penned.blog.dto.response.PageResponse;
 import com.pen_penned.blog.dto.response.PostDetailsResponse;
+import com.pen_penned.blog.dto.response.PostImageResponseDTO;
 import com.pen_penned.blog.dto.response.PostResponse;
 import com.pen_penned.blog.exception.ResourceNotFoundException;
 import com.pen_penned.blog.model.Post;
+import com.pen_penned.blog.model.PostImage;
 import com.pen_penned.blog.model.User;
 import com.pen_penned.blog.repositories.CommentRepository;
+import com.pen_penned.blog.repositories.PostImageRepository;
 import com.pen_penned.blog.repositories.PostRepository;
 import com.pen_penned.blog.repositories.UserRepository;
 import com.pen_penned.blog.util.AuthUtil;
@@ -23,16 +26,20 @@ import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
 
+    private final AuthUtil authUtil;
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
-    private final AuthUtil authUtil;
+    private final PostImageRepository postImageRepository;
+    private final ImageProcessingService imageProcessingService;
+    private final S3Service s3Service;
 
     @Override
     public PostResponse createPost(PostRequest postRequest, User user) {
@@ -60,6 +67,20 @@ public class PostServiceImpl implements PostService {
         //  Ensure comments is zero
         postResponse.setCommentCount(0);
 
+        // Handle image IDs if any are provided
+        if (postRequest.getImageIds() != null && !postRequest.getImageIds().isEmpty()) {
+            List<PostImage> existingImages = postImageRepository.findAllById(postRequest.getImageIds());
+            for (PostImage image : existingImages) {
+                image.setPost(savedPost);
+            }
+            postImageRepository.saveAll(existingImages);
+
+            // Add images to response
+            List<PostImageResponseDTO> imageResponses = existingImages.stream()
+                    .map(PostImageResponseDTO::fromEntity)
+                    .collect(Collectors.toList());
+            postResponse.setImages(imageResponses);
+        }
         return postResponse;
     }
 
@@ -84,16 +105,26 @@ public class PostServiceImpl implements PostService {
         List<Post> posts = pagePosts.getContent();
 
         // Convert posts to DTOs
-        List<PostResponse> postResponses = posts.stream()
+        List<PostResponse> postResponse = posts.stream()
                 .map(post -> {
-                    PostResponse postResponse = modelMapper.map(post, PostResponse.class);
-                    postResponse.setCommentCount(commentRepository.getCommentCountByPostId(post.getId()));
-                    return postResponse;
+                    PostResponse response = modelMapper.map(post, PostResponse.class);
+                    response.setCommentCount(commentRepository.getCommentCountByPostId(post.getId()));
+
+                    // Add image to response
+                    List<PostImage> images = postImageRepository.findByPostId(post.getId());
+                    if (images != null && !images.isEmpty()) {
+                        List<PostImageResponseDTO> imageResponse = images.stream()
+                                .map(PostImageResponseDTO::fromEntity)
+                                .collect(Collectors.toList());
+                        response.setImages(imageResponse);
+                    }
+
+                    return response;
                 }).toList();
 
         // Prepare PostResponse
         return new PageResponse<>(
-                postResponses,
+                postResponse,
                 pagePosts.getNumber(),
                 pagePosts.getSize(),
                 pagePosts.getTotalElements(),
@@ -121,6 +152,15 @@ public class PostServiceImpl implements PostService {
 
         postDetailsResponse.setComments(comments);
 
+        // Add images to response
+        List<PostImage> images = postImageRepository.findByPostId(post.getId());
+        if (images != null && !images.isEmpty()) {
+            List<PostImageResponseDTO> imageResponses = images.stream()
+                    .map(PostImageResponseDTO::fromEntity)
+                    .collect(Collectors.toList());
+            postDetailsResponse.setImages(imageResponses);
+        }
+
         return postDetailsResponse;
     }
 
@@ -142,16 +182,26 @@ public class PostServiceImpl implements PostService {
         // Get paginated posts for the user
         Page<Post> pagePosts = postRepository.findByAuthor(user, pageDetails);
 
-        List<PostResponse> postResponses = pagePosts.getContent().stream()
+        List<PostResponse> postResponse = pagePosts.getContent().stream()
                 .map(post -> {
-                    PostResponse postResponse = modelMapper.map(post, PostResponse.class);
-                    postResponse.setCommentCount(post.getComments().size());
-                    return postResponse;
+                    PostResponse response = modelMapper.map(post, PostResponse.class);
+                    response.setCommentCount(post.getComments().size());
+
+                    // Add image to response
+                    List<PostImage> images = postImageRepository.findByPostId(post.getId());
+                    if (images != null && !images.isEmpty()) {
+                        List<PostImageResponseDTO> imageResponses = images.stream()
+                                .map(PostImageResponseDTO::fromEntity)
+                                .collect(Collectors.toList());
+                        response.setImages(imageResponses);
+                    }
+
+                    return response;
                 })
                 .toList();
 
         return new PageResponse<>(
-                postResponses,
+                postResponse,
                 pagePosts.getNumber(),
                 pagePosts.getSize(),
                 pagePosts.getTotalElements(),
@@ -183,17 +233,26 @@ public class PostServiceImpl implements PostService {
         Page<Post> postsPage = postRepository.findByAuthor(user, pageable);
 
         // Map to PostResponse with comment count
-        List<PostResponse> postResponses = postsPage.getContent().stream()
+        List<PostResponse> postResponse = postsPage.getContent().stream()
                 .map(post -> {
                     PostResponse response = modelMapper.map(post, PostResponse.class);
                     response.setCommentCount(post.getComments().size());
+
+                    // Add images to response
+                    List<PostImage> images = postImageRepository.findByPostId(post.getId());
+                    if (images != null && !images.isEmpty()) {
+                        List<PostImageResponseDTO> imageResponses = images.stream()
+                                .map(PostImageResponseDTO::fromEntity)
+                                .collect(Collectors.toList());
+                        response.setImages(imageResponses);
+                    }
                     return response;
                 })
                 .toList();
 
         // Return paginated response
         return new PageResponse<>(
-                postResponses,
+                postResponse,
                 postsPage.getNumber(),
                 postsPage.getSize(),
                 postsPage.getTotalElements(),
@@ -223,6 +282,11 @@ public class PostServiceImpl implements PostService {
         if (postRequest.getCoverImageUrl() != null) existingPost.setCoverImageUrl(postRequest.getCoverImageUrl());
         if (postRequest.getPublished() != null) existingPost.setPublished(postRequest.getPublished());
 
+        // Handle image IDs if any are provided
+        if (postRequest.getImageIds() != null) {
+            updatePostImages(existingPost, postRequest.getImageIds());
+        }
+
         // Save updated post
         Post updatedPost = postRepository.save(existingPost);
 
@@ -231,6 +295,15 @@ public class PostServiceImpl implements PostService {
         postResponse.setAuthorFirstName(loggedInUser.getFirstName());
         postResponse.setAuthorLastName(loggedInUser.getLastName());
         postResponse.setCommentCount(commentRepository.getCommentCountByPostId(postId));
+
+        // Add images to response
+        List<PostImage> images = postImageRepository.findByPostId(postId);
+        if (images != null && !images.isEmpty()) {
+            List<PostImageResponseDTO> imageResponses = images.stream()
+                    .map(PostImageResponseDTO::fromEntity)
+                    .collect(Collectors.toList());
+            postResponse.setImages(imageResponses);
+        }
 
         return postResponse;
     }
@@ -248,7 +321,90 @@ public class PostServiceImpl implements PostService {
             throw new AccessDeniedException("You do not have permission to delete this post.");
         }
 
+        // Delete associated images from S3 first
+        List<PostImage> images = postImageRepository.findByPostId(postId);
+        for (PostImage image : images) {
+            s3Service.deleteFile(image.getS3Key());
+            if (image.getThumbnailS3Key() != null) {
+                s3Service.deleteFile(image.getThumbnailS3Key());
+            }
+        }
+
         // Delete the post from the repository
         postRepository.delete(post);
     }
+
+
+    private void updatePostImages(Post post, List<Long> imageIds) {
+        if (imageIds == null) {
+            return;
+        }
+
+        // Get current images
+        List<PostImage> currentImages = postImageRepository.findByPostId(post.getId());
+
+        // Find images to remove (images that are in currentImages but not in imageIds)
+        List<PostImage> imagesToRemove = currentImages.stream()
+                .filter(image -> !imageIds.contains(image.getId()))
+                .collect(Collectors.toList());
+
+        // Remove images
+        for (PostImage image : imagesToRemove) {
+            s3Service.deleteFile(image.getS3Key());
+            if (image.getThumbnailS3Key() != null) {
+                s3Service.deleteFile(image.getThumbnailS3Key());
+            }
+        }
+        postImageRepository.deleteAll(imagesToRemove);
+
+        // Update existing images or add new ones
+        if (!imageIds.isEmpty()) {
+            List<PostImage> imagesToUpdate = postImageRepository.findAllById(imageIds);
+            for (PostImage image : imagesToUpdate) {
+                if (image.getPost() == null || !image.getPost().getId().equals(post.getId())) {
+                    image.setPost(post);
+                }
+            }
+            postImageRepository.saveAll(imagesToUpdate);
+        }
+    }
+
+    @Override
+    public PostResponse getPostResponseById(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post", "postId", postId));
+
+        PostResponse postResponse = modelMapper.map(post, PostResponse.class);
+
+        // Set author details
+        postResponse.setAuthorId(post.getAuthor().getId());
+        postResponse.setAuthorFirstName(post.getAuthor().getFirstName());
+        postResponse.setAuthorLastName(post.getAuthor().getLastName());
+
+        // Set comment count
+        postResponse.setCommentCount(commentRepository.getCommentCountByPostId(post.getId()));
+
+        // Add images to response
+        List<PostImage> images = postImageRepository.findByPostId(post.getId());
+        if (images != null && !images.isEmpty()) {
+            List<PostImageResponseDTO> imageResponses = images.stream()
+                    .map(PostImageResponseDTO::fromEntity)
+                    .collect(Collectors.toList());
+            postResponse.setImages(imageResponses);
+        }
+
+        return postResponse;
+    }
+
+    @Override
+    public void verifyPostOwnership(Long postId, Long userId) throws AccessDeniedException {
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post", "postId", postId));
+
+        if (!post.getAuthor().getId().equals(userId)) {
+            throw new AccessDeniedException("You do not have permission to modify this post.");
+        }
+    }
+
 }

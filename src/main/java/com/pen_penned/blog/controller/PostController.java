@@ -1,20 +1,30 @@
 package com.pen_penned.blog.controller;
 
 import com.pen_penned.blog.config.AppConstants;
+import com.pen_penned.blog.dto.request.PostImageUploadRequestDTO;
 import com.pen_penned.blog.dto.request.PostRequest;
 import com.pen_penned.blog.dto.response.PageResponse;
 import com.pen_penned.blog.dto.response.PostDetailsResponse;
 import com.pen_penned.blog.dto.response.PostResponse;
+import com.pen_penned.blog.model.PostImage;
 import com.pen_penned.blog.model.User;
+import com.pen_penned.blog.service.PostImageService;
 import com.pen_penned.blog.service.PostService;
 import com.pen_penned.blog.util.AuthUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.AccessDeniedException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 
 @RestController
 @RequestMapping("/api/v1/posts")
@@ -23,8 +33,59 @@ public class PostController {
 
     private final AuthUtil authUtil;
     private final PostService postService;
+    private final PostImageService postImageService;
 
-    @PostMapping
+    @PostMapping(value = "/with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PostResponse> createPostWithImages(
+            @Valid @RequestPart("post") PostRequest postRequest,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            @RequestPart(value = "imageMetadata", required = false)
+            List<PostImageUploadRequestDTO> imageMetadataList
+    ) {
+        User user = authUtil.loggedInUser();
+
+        // Fist create the post
+        PostResponse savedPost = postService.createPost(postRequest, user);
+
+        // If images are provided, upload them
+        if (images != null && !images.isEmpty()) {
+            List<CompletableFuture<PostImage>> futures = new ArrayList<>();
+
+            // Prepare metadata list if it's null or smaller than images list
+            if (imageMetadataList == null) {
+                imageMetadataList = new ArrayList<>();
+                for (int i = 0; i < images.size(); i++) {
+                    imageMetadataList.add(new PostImageUploadRequestDTO());
+                }
+            } else if (imageMetadataList.size() < images.size()) {
+                for (int i = imageMetadataList.size(); i < images.size(); i++) {
+                    imageMetadataList.add(new PostImageUploadRequestDTO());
+                }
+            }
+
+            // Upload each image asynchronously
+            for (int i = 0; i < images.size(); i++) {
+                PostImageUploadRequestDTO metadata = imageMetadataList.get(i);
+                metadata.setDisplayOrder(metadata.getDisplayOrder() != null ? metadata.getDisplayOrder() : i);
+                futures.add(postImageService.uploadPostImage(savedPost.getId(), images.get(i), metadata));
+            }
+
+            try {
+                // Wait for all uploads to complete
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get();
+
+                // Retrieve the updated post with images
+                savedPost = postService.getPostResponseById(savedPost.getId());
+            } catch (InterruptedException | ExecutionException ignored) {
+                // Continue with the post creation even if some images fail to upload
+                // The successfully uploaded images will still be associated with the post
+            }
+        }
+
+        return new ResponseEntity<>(savedPost, HttpStatus.CREATED);
+    }
+
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponse> createPost(@Valid @RequestBody PostRequest postRequest) {
         User user = authUtil.loggedInUser();
         PostResponse savedPost = postService.createPost(postRequest, user);
@@ -65,5 +126,4 @@ public class PostController {
         postService.deletePost(postId);
         return ResponseEntity.noContent().build();
     }
-
 }
