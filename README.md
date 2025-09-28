@@ -1,4 +1,4 @@
-# Pen Penned Blogging App - Deployment Guide
+# Pen Penned Blogging App Backend Service - Deployment Guide
 
 ## Overview
 
@@ -95,3 +95,4 @@ docker-compose -f docker-compose.dev.yml up -d postgres blog-app-dev
 - The `--no-cache` option ensures that a fresh build is performed, avoiding stale configurations.
 
 This guide should help you effectively manage and deploy the Pen Penned Blogging App in different environments.
+
